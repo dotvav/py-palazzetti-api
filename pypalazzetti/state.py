@@ -73,7 +73,7 @@ class PalazzettiState:
 
     @property
     def is_hydro(self) -> bool:
-        return self._properties["STOVETYPE"] in [1, 3, 5, 7, 8]
+        return self._properties["STOVETYPE"] in [2, 4, 6]
 
     @property
     def has_fan(self) -> bool:
@@ -271,8 +271,8 @@ class PalazzettiState:
 
     @property
     def sw_version(self) -> str:
-        return self._attributes["plzbridge"]
+        return self._properties["plzbridge"]
 
     @property
     def hw_version(self) -> str:
-        return self._attributes["SYSTEM"]
+        return self._properties["SYSTEM"]

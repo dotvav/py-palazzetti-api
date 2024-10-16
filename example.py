@@ -1,8 +1,5 @@
-# Python Palazzetti API
-An async Python library to access and control a Palazzetti stove through a Palazzetti Connection Box.
+"""Example usage script."""
 
-## Getting started
-```python
 import asyncio
 
 from pypalazzetti.client import PalazzettiClient
@@ -27,4 +24,3 @@ async def main():
 
 
 asyncio.new_event_loop().run_until_complete(main())
-```

@@ -33,103 +33,132 @@ class PalazzettiClient:
         self._hostname = hostname
 
     async def connect(self) -> bool:
-        """Connects to the device."""
+        """Connect to the device."""
         r = await self._execute_command(
             command=COMMAND_UPDATE_PROPERTIES, merge_state=False
         )
-        self._state.merge_properties(r)
-        self._connected = r is not None and r["SUCCESS"]
-        return self._connected
+        if self._is_success(r):
+            self._state.merge_properties(r)
+            self._connected = True
+            return True
+        return False
 
     async def is_online(self) -> bool:
-        """Tests if the device is online."""
+        """Test if the device is online."""
         if not self._connected:
             await self.connect()
         r = await self._execute_command(command=COMMAND_CHECK_ONLINE)
-        return r is not None and r["SUCCESS"]
+        return self._is_success(r)
 
     async def update_state(self) -> bool:
-        """Updates the device's state."""
+        """Update the device's state."""
         if not self._connected:
             await self.connect()
         if self._connected:
             r = await self._execute_command(command=COMMAND_UPDATE_STATE)
-            return r is not None and r["SUCCESS"]
+            return self._is_success(r)
         return False
 
     @property
     def sw_version(self) -> str:
-        """The software version."""
+        """Return the software version."""
         return self._state.sw_version
 
     @property
     def hw_version(self) -> str:
-        """The hardware version"""
+        """return the hardware version"""
         return self._state.hw_version
 
     @property
     def has_on_off_switch(self) -> bool:
+        """Return the availability of the on/of switch"""
         return self._state.has_on_off_switch
 
     @property
     def target_temperature(self) -> int:
-        """Returns the target temperature"""
+        """Return the target temperature"""
         return self._state.target_temperature
 
     @property
     def room_temperature(self) -> float:
-        """Returns the room temperature."""
+        """Return the room temperature."""
         return self._state.room_temperature
 
     @property
     def outlet_temperature(self) -> float:
-        """Returns the outlet temperature."""
+        """Return the outlet temperature."""
         return self._state.outlet_temperature
 
     @property
     def exhaust_temperature(self) -> float:
-        """Returns the exhaust temperature."""
+        """Return the exhaust temperature."""
         return self._state.exhaust_temperature
 
     @property
     def host(self) -> str:
-        """Returns the host name or IP address."""
+        """Return the host name or IP address."""
         return self._state.host
 
     @property
     def mac(self) -> str:
-        """Returns the mac address."""
+        """Return the mac address."""
         return self._state.mac
 
     @property
     def name(self) -> str:
-        """Returns the stove's name."""
+        """Return the stove's name."""
         return self._state.name
 
     @property
     def status(self) -> int:
-        """Returns the stove's status."""
+        """Return the stove's status."""
         return self._state.status
 
     @property
     def fan_speed(self) -> int:
-        """Returns the fan mode."""
+        """Return the fan mode."""
         return self._state.main_fan_speed
 
     @property
     def power_mode(self) -> int:
-        """Returns the power mode."""
+        """Return the power mode."""
         return self._state.power_mode
 
     @property
     def pellet_quantity(self) -> int:
-        """Returns the pellet quantity."""
+        """Return the pellet quantity."""
         return self._state.pellet_quantity
 
     @property
     def is_heating(self) -> bool:
-        """Checks if the stove is currently heating."""
+        """Check if the stove is currently heating."""
         return self._state.is_heating
+
+    @property
+    def has_fan_silent(self) -> bool:
+        """Check if the fan has the silent mode available."""
+        return self._state.has_fan_mode_silent
+
+    @property
+    def has_fan_high(self) -> bool:
+        """Check if the fan has the high mode available."""
+        return self._state.has_fan_mode_high
+
+    @property
+    def has_fan_auto(self) -> bool:
+        """Check if the fan has the auto mode available."""
+        return self._state.has_fan_mode_auto
+
+    @property
+    def fan_speed_min(self) -> int:
+        """Return the minimum fan speed."""
+        # Some devices state 0 as the min, which is equivalent to silent, even when silent mode is not available
+        return max(self._state.main_fan_min, 1)
+
+    @property
+    def fan_speed_max(self) -> int:
+        """Return the maximum fan speed."""
+        return self._state.main_fan_max
 
     async def set_target_temperature(self, temperature: int) -> bool:
         """Sets the target temperature."""
@@ -144,53 +173,53 @@ class PalazzettiClient:
         return False
 
     async def set_fan_silent(self) -> bool:
-        """Sets the fan to silent mode."""
+        """Set the fan to silent mode."""
         return await self.set_fan_speed(0)
 
     async def set_fan_high(self) -> bool:
-        """Sets the fan to high mode."""
+        """Set the fan to high mode."""
         return await self.set_fan_speed(6)
 
     async def set_fan_auto(self) -> bool:
-        """Sets the fan to auto mode."""
+        """Set the fan to auto mode."""
         return await self.set_fan_speed(7)
 
     async def set_fan_speed(self, fan_speed: int) -> bool:
-        """Sets the fan speed."""
+        """Set the fan speed."""
         if fan_speed == 0 and self._state.has_fan_mode_silent:
-            return (await self._execute_command(command=COMMAND_SET_FAN_SILENT))[
-                "SUCCESS"
-            ]
+            return self._is_success(
+                await self._execute_command(command=COMMAND_SET_FAN_SILENT)
+            )
         if (
             (self._state.main_fan_min <= fan_speed <= self._state.main_fan_max)
             or (fan_speed == 6 and self._state.has_fan_mode_high)
             or (fan_speed == 7 and self._state.has_fan_mode_auto)
         ):
-            return (
+            return self._is_success(
                 await self._execute_command(
                     command=COMMAND_SET_FAN_SPEED, parameter=fan_speed
                 )
-            )["SUCCESS"]
+            )
         raise ValidationError(f"Main fan speed ({fan_speed}) out of range.")
 
     async def set_power_mode(self, power: int) -> bool:
-        """Sets the power mode."""
+        """Set the power mode."""
         if 1 <= power <= 5:
-            return (
+            return self._is_success(
                 await self._execute_command(
                     command=COMMAND_SET_POWER_MODE, parameter=power
                 )
-            )["SUCCESS"]
+            )
         raise ValidationError(f"Power mode ({power}) out of range.")
 
     async def set_on(self, on: bool) -> bool:
-        """Sets the stove on or off."""
+        """Set the stove on or off."""
         if self._state.has_on_off_switch:
-            return (
+            return self._is_success(
                 await self._execute_command(
                     command=COMMAND_SET_ON if on else COMMAND_SET_OFF
                 )
-            )["SUCCESS"]
+            )
         raise ValidationError("Main operation switch not available.")
 
     async def _execute_command(
@@ -213,3 +242,8 @@ class PalazzettiClient:
         if merge_state:
             self._state.merge_state(payload)
         return payload
+
+    def _is_success(
+        self, payload: dict[str, bool | dict[str, str | int | float]]
+    ) -> bool:
+        return payload and payload.get("SUCCESS", False)
