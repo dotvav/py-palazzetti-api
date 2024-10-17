@@ -1,26 +1,35 @@
 """Palazzetti data parsing and logic."""
 
 from .const import HEATING_STATUSES
+import json
 
 
-class PalazzettiState:
+class _PalazzettiAPIData(dict[str, bool | dict[str, str | int | float]]):
+    """Palazzetti API Data."""
+
+    def __init__(self, payload: str):
+        super().__init__(json.loads(payload))
+        pass
+
+    @property
+    def success(self):
+        return "SUCCESS" in self and self["SUCCESS"]
+
+
+class _PalazzettiState:
     _properties: dict[str, str | int | float] = {}  # Static data
     _attributes: dict[str, str | int | float] = {}  # Mostly sensors data
 
-    def merge_properties(
-        self, state_data: dict[str, bool | dict[str, str | int | float]]
-    ) -> bool:
+    def merge_properties(self, state_data: _PalazzettiAPIData) -> bool:
         """Updates the current properties."""
-        if state_data["SUCCESS"]:
+        if state_data.success:
             self._properties = self._properties | state_data["DATA"]
             return True
         return False
 
-    def merge_state(
-        self, state_data: dict[str, bool | dict[str, str | int | float]]
-    ) -> bool:
+    def merge_state(self, state_data: _PalazzettiAPIData) -> bool:
         """Updates the attributes."""
-        if state_data["SUCCESS"]:
+        if state_data.success:
             self._attributes = self._attributes | state_data["DATA"]
             return True
         return False

@@ -1,8 +1,8 @@
 """Test the PalazzettiClient class."""
 
 from pypalazzetti.client import PalazzettiClient
+from pypalazzetti.state import _PalazzettiAPIData
 from unittest.mock import patch
-import json
 import pytest
 
 
@@ -46,7 +46,7 @@ async def test_connect():
     client = PalazzettiClient("127.0.0.1")
     with patch(
         "pypalazzetti.client.PalazzettiClient._execute_command",
-        return_value=json.loads(stdt_response()),
+        return_value=_PalazzettiAPIData(stdt_response()),
     ) as exec:
         success = await client.connect()
 

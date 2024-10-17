@@ -12,10 +12,9 @@ from .const import (
     COMMAND_UPDATE_PROPERTIES,
     COMMAND_UPDATE_STATE,
 )
-from .state import PalazzettiState
+from .state import _PalazzettiState, _PalazzettiAPIData
 from .exceptions import CommunicationError, ValidationError
 import aiohttp
-import json
 from json.decoder import JSONDecodeError
 
 
@@ -23,8 +22,8 @@ class PalazzettiClient:
     """Interface class for the Overkiz API."""
 
     _hostname: str
-    _state = PalazzettiState()
-    _connected = False
+    _state = _PalazzettiState()
+    connected = False
 
     def __init__(
         self,
@@ -37,27 +36,30 @@ class PalazzettiClient:
         r = await self._execute_command(
             command=COMMAND_UPDATE_PROPERTIES, merge_state=False
         )
-        if self._is_success(r):
+        if r.success:
             self._state.merge_properties(r)
-            self._connected = True
-            return True
-        return False
+            self.connected = True
+        else:
+            self.connected = False
+        return self.connected
 
     async def is_online(self) -> bool:
         """Test if the device is online."""
-        if not self._connected:
+        if not self.connected:
             await self.connect()
-        r = await self._execute_command(command=COMMAND_CHECK_ONLINE)
-        return self._is_success(r)
+        return (await self._execute_command(command=COMMAND_CHECK_ONLINE)).success
 
     async def update_state(self) -> bool:
         """Update the device's state."""
-        if not self._connected:
+        # Connect if not connected yet
+        if not self.connected:
             await self.connect()
-        if self._connected:
-            r = await self._execute_command(command=COMMAND_UPDATE_STATE)
-            return self._is_success(r)
-        return False
+        # Check if connection was successful before updating
+        if self.connected:
+            self._connected = (
+                await self._execute_command(command=COMMAND_UPDATE_STATE)
+            ).success
+        return self._connected
 
     @property
     def sw_version(self) -> str:
@@ -152,7 +154,7 @@ class PalazzettiClient:
     @property
     def fan_speed_min(self) -> int:
         """Return the minimum fan speed."""
-        # Some devices state 0 as the min, which is equivalent to silent, even when silent mode is not available
+        # Remove 0. Some devices state 0 as the min, which is equivalent to silent, even when silent mode is not available
         return max(self._state.main_fan_min, 1)
 
     @property
@@ -187,44 +189,42 @@ class PalazzettiClient:
     async def set_fan_speed(self, fan_speed: int) -> bool:
         """Set the fan speed."""
         if fan_speed == 0 and self._state.has_fan_mode_silent:
-            return self._is_success(
-                await self._execute_command(command=COMMAND_SET_FAN_SILENT)
-            )
+            return (await self._execute_command(command=COMMAND_SET_FAN_SILENT)).success
         if (
             (self._state.main_fan_min <= fan_speed <= self._state.main_fan_max)
             or (fan_speed == 6 and self._state.has_fan_mode_high)
             or (fan_speed == 7 and self._state.has_fan_mode_auto)
         ):
-            return self._is_success(
+            return (
                 await self._execute_command(
                     command=COMMAND_SET_FAN_SPEED, parameter=fan_speed
                 )
-            )
+            ).success
         raise ValidationError(f"Main fan speed ({fan_speed}) out of range.")
 
     async def set_power_mode(self, power: int) -> bool:
         """Set the power mode."""
         if 1 <= power <= 5:
-            return self._is_success(
+            return (
                 await self._execute_command(
                     command=COMMAND_SET_POWER_MODE, parameter=power
                 )
-            )
+            ).success
         raise ValidationError(f"Power mode ({power}) out of range.")
 
     async def set_on(self, on: bool) -> bool:
         """Set the stove on or off."""
         if self._state.has_on_off_switch:
-            return self._is_success(
+            return (
                 await self._execute_command(
                     command=COMMAND_SET_ON if on else COMMAND_SET_OFF
                 )
-            )
+            ).success
         raise ValidationError("Main operation switch not available.")
 
     async def _execute_command(
         self, command: str, parameter: str | int = None, merge_state=True
-    ) -> dict[str, bool | dict[str, str | int | float]]:
+    ) -> _PalazzettiAPIData:
         request_url = API_COMMAND_URL_TEMPLATE.format(
             host=self._hostname,
             command_and_parameter=f"{command} {parameter}" if parameter else command,
@@ -233,17 +233,14 @@ class PalazzettiClient:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(request_url) as response:
-                    payload = json.loads(await response.text())
+                    payload = _PalazzettiAPIData(await response.text())
         except (TypeError, JSONDecodeError) as ex:
+            self.connected = False
             raise CommunicationError("Invalid API response") from ex
         except aiohttp.ClientError as ex:
+            self.connected = False
             raise CommunicationError("API communication error") from ex
 
         if merge_state:
             self._state.merge_state(payload)
         return payload
-
-    def _is_success(
-        self, payload: dict[str, bool | dict[str, str | int | float]]
-    ) -> bool:
-        return payload and payload.get("SUCCESS", False)
