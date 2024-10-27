@@ -162,6 +162,16 @@ class PalazzettiClient:
         """Return the maximum fan speed."""
         return self._state.main_fan_max
 
+    @property
+    def target_temperature_min(self) -> int:
+        """Return the minimum target temperature."""
+        return self._state.target_temperature_min
+
+    @property
+    def target_temperature_max(self) -> int:
+        """Return the maximum target temperature."""
+        return self._state.target_temperature_max
+
     async def set_target_temperature(self, temperature: int) -> bool:
         """Sets the target temperature."""
         if (
