@@ -1,6 +1,6 @@
 """Palazzetti data parsing and logic."""
 
-from .const import HEATING_STATUSES
+from .const import OFF_STATUSES, HEATING_STATUSES
 import json
 
 
@@ -273,6 +273,10 @@ class _PalazzettiState:
     @property
     def pellet_quantity(self) -> int:
         return self._attributes["PQT"]
+
+    @property
+    def is_on(self) -> bool:
+        return self._attributes["LSTATUS"] not in OFF_STATUSES
 
     @property
     def is_heating(self) -> bool:

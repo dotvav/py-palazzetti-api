@@ -132,6 +132,11 @@ class PalazzettiClient:
         return self._state.pellet_quantity
 
     @property
+    def is_on(self) -> bool:
+        """Check if the stove is on."""
+        return self._state.is_on
+
+    @property
     def is_heating(self) -> bool:
         """Check if the stove is currently heating."""
         return self._state.is_heating

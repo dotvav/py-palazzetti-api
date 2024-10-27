@@ -85,6 +85,7 @@ async def test_state(mock_stdt_response_ok, mock_alls_response_ok):
     ):
         assert await client.update_state()
 
+    assert client.is_on
     assert client.is_heating
     assert client.target_temperature == 21
     assert client.room_temperature == 21.5
