@@ -259,10 +259,6 @@ class _PalazzettiState:
         return self._attributes["T3"]
 
     @property
-    def host(self) -> str:
-        return self._properties["IP"]
-
-    @property
     def mac(self) -> str:
         return self._properties["MAC"]
 

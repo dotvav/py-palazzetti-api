@@ -99,7 +99,7 @@ class PalazzettiClient:
     @property
     def host(self) -> str:
         """Return the host name or IP address."""
-        return self._state.host
+        return self._hostname
 
     @property
     def mac(self) -> str:
