@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.1.9
-* Fix the website name in `setup.py` (thanks @joostlek).
+* Fix `setup.py` (thanks @joostlek, @onkelbeh).
 * Add `CHANGELOG.md`
 
 ## 0.1.8
