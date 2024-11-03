@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.10
+* Fix `setup.py`
+
 ## 0.1.9
 * Fix `setup.py` (thanks @joostlek, @onkelbeh).
 * Add `CHANGELOG.md`

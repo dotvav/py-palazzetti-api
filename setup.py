@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="pypalazzetti",
-    version="0.1.9",
+    version="0.1.10",
     author="Vincent Roukine",
     author_email="vincent.roukine@gmail.com",
     description="A Python library to access and control a Palazzetti stove through a Palazzetti Connection Box",
@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     license="MIT",
     url="https://github.com/dotvav/py-palazzetti-api",
-    packages=setuptools.find_packages("tests","tests.*"),
+    packages=setuptools.find_packages(exclude=("tests", "tests.*")),
     install_requires=["aiohttp>=3.10.3"],
     python_requires=">=3.6",
     include_package_data=True,
