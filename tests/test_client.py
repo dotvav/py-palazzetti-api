@@ -90,6 +90,7 @@ async def test_state(mock_stdt_response_ok, mock_alls_response_ok):
     assert client.target_temperature == 21
     assert client.room_temperature == 21.5
     assert client.exhaust_temperature == 45
+    assert client.host == "127.0.0.1"
     assert client.mac == "40:F3:85:11:22:33"
     assert client.pellet_quantity == 1807
     assert client.power_mode == 3
