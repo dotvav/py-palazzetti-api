@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     license="MIT",
     url="https://github.com/dotvav/py-palazzetti-api",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages("tests","tests.*"),
     install_requires=["aiohttp>=3.10.3"],
     python_requires=">=3.6",
     include_package_data=True,
