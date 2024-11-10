@@ -58,6 +58,7 @@ STATUSES: Final = {
 
 HEATING_STATUSES = [2, 3, 4, 5, 6, 7, 51, 502, 503, 504]
 OFF_STATUSES = [0, 1]
+MAIN_PROBE_TEMPERATURE = ["T1", "T2", "T3", "T4", "T5"]
 
 FAN_SILENT: Final = "SILENT"
 FAN_HIGH: Final = "HIGH"

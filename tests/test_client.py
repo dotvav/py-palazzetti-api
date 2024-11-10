@@ -89,8 +89,14 @@ async def test_state(mock_stdt_response_ok, mock_alls_response_ok):
     assert client.is_heating
     assert client.target_temperature == 21
     assert client.room_temperature == 21.5
-    assert client.outlet_temperature == 25.1
     assert client.wood_combustion_temperature == 45
+    assert (client.T1, client.T2, client.T3, client.T4, client.T5) == (
+        21.5,
+        25.1,
+        45,
+        0,
+        0,
+    )
     assert client.host == "127.0.0.1"
     assert client.mac == "40:F3:85:71:23:45"
     assert client.pellet_quantity == 1807

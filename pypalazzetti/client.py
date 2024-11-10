@@ -83,19 +83,64 @@ class PalazzettiClient:
         return self._state.target_temperature
 
     @property
+    def current_temperature(self) -> float:
+        """Return the current temperature."""
+        return self._state.current_temperature
+
+    @property
+    def has_air_outlet_temperature(self) -> bool:
+        """Return the air outlet temperature."""
+        return self._state.has_air_outlet_temperature
+
+    @property
+    def air_outlet_temperature(self) -> float:
+        """Return the air outlet temperature."""
+        return self._state.air_outlet_temperature
+
+    @property
     def room_temperature(self) -> float:
-        """Return the room temperature."""
-        return self._state.room_temperature
+        """DEPRECATED - Return the room temperature."""
+        return self._state.current_temperature
 
     @property
     def outlet_temperature(self) -> float:
-        """Return the outlet temperature."""
-        return self._state.outlet_temperature
+        """DEPRECATED - Return the outlet temperature."""
+        return self._state.air_outlet_temperature
+
+    @property
+    def has_wood_combustion_temperature(self) -> bool:
+        """Return the air outlet temperature."""
+        return self._state.has_wood_combustion_temperature
 
     @property
     def wood_combustion_temperature(self) -> float:
         """Return the wood combustion temperature."""
         return self._state.wood_combustion_temperature
+
+    @property
+    def T1(self) -> float:
+        """Return the T1 temperature."""
+        return self._state.T1
+
+    @property
+    def T2(self) -> float:
+        """Return the T2 temperature."""
+        return self._state.T2
+
+    @property
+    def T3(self) -> float:
+        """Return the T3 temperature."""
+        return self._state.T3
+
+    @property
+    def T4(self) -> float:
+        """Return the T4 temperature."""
+        return self._state.T4
+
+    @property
+    def T5(self) -> float:
+        """Return the T5 temperature."""
+        return self._state.T5
 
     @property
     def host(self) -> str:

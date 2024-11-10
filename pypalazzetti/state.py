@@ -1,6 +1,6 @@
 """Palazzetti data parsing and logic."""
 
-from .const import OFF_STATUSES, HEATING_STATUSES
+from .const import OFF_STATUSES, HEATING_STATUSES, MAIN_PROBE_TEMPERATURE
 import json
 
 
@@ -141,11 +141,11 @@ class _PalazzettiState:
         return self._attributes["PLEVEL"]
 
     @property
-    def has_combustion_temperature(self) -> bool:
+    def has_wood_combustion_temperature(self) -> bool:
         return self._properties["STOVETYPE"] in [7, 8]
 
     @property
-    def has_outlet_temperature(self) -> bool:
+    def has_air_outlet_temperature(self) -> bool:
         return (
             self._properties["STOVETYPE"] in [7, 8] and self._properties["FAN2TYPE"] > 1
         )
@@ -177,6 +177,34 @@ class _PalazzettiState:
     @property
     def wood_combustion_temperature(self) -> float:
         return self._attributes["T3"]
+
+    @property
+    def air_outlet_temperature(self) -> float:
+        return self._attributes["T4"]
+
+    @property
+    def current_temperature(self) -> float:
+        return self._attributes[MAIN_PROBE_TEMPERATURE[self._properties["MAINTPROBE"]]]
+
+    @property
+    def T1(self) -> float:
+        return self._attributes["T1"]
+
+    @property
+    def T2(self) -> float:
+        return self._attributes["T2"]
+
+    @property
+    def T3(self) -> float:
+        return self._attributes["T3"]
+
+    @property
+    def T4(self) -> float:
+        return self._attributes["T4"]
+
+    @property
+    def T5(self) -> float:
+        return self._attributes["T5"]
 
     @property
     def power_mode(self) -> float:
@@ -241,14 +269,6 @@ class _PalazzettiState:
     @property
     def status(self) -> int:
         return self._attributes["LSTATUS"]
-
-    @property
-    def room_temperature(self) -> float:
-        return self._attributes["T1"]
-
-    @property
-    def outlet_temperature(self) -> float:
-        return self._attributes["T2"]
 
     @property
     def mac(self) -> str:
