@@ -175,10 +175,6 @@ class _PalazzettiState:
         return self._attributes["T2"]
 
     @property
-    def outlet_air_temperature(self) -> float:
-        return self._attributes["T4"]
-
-    @property
     def wood_combustion_temperature(self) -> float:
         return self._attributes["T3"]
 
@@ -252,11 +248,7 @@ class _PalazzettiState:
 
     @property
     def outlet_temperature(self) -> float:
-        return self._attributes["T4"]
-
-    @property
-    def exhaust_temperature(self) -> float:
-        return self._attributes["T3"]
+        return self._attributes["T2"]
 
     @property
     def mac(self) -> str:

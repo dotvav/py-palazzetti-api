@@ -92,9 +92,9 @@ class PalazzettiClient:
         return self._state.outlet_temperature
 
     @property
-    def exhaust_temperature(self) -> float:
-        """Return the exhaust temperature."""
-        return self._state.exhaust_temperature
+    def wood_combustion_temperature(self) -> float:
+        """Return the wood combustion temperature."""
+        return self._state.wood_combustion_temperature
 
     @property
     def host(self) -> str:
