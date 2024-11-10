@@ -15,6 +15,6 @@ setuptools.setup(
     url="https://github.com/dotvav/py-palazzetti-api",
     packages=setuptools.find_packages(exclude=("tests", "tests.*")),
     install_requires=["aiohttp>=3.10.3"],
-    python_requires=">=3.6",
+    python_requires=">=3.10",
     include_package_data=True,
 )
