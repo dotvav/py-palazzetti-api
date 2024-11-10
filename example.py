@@ -21,6 +21,8 @@ async def main():
     print(f"Max fan speed: {client.fan_speed_max}")
     print(f"Set fan speed: {await client.set_fan_auto()}")
     print(f"Fan speed: {client.fan_speed}")
+    print("---")
+    print(client.to_json())
 
 
 asyncio.new_event_loop().run_until_complete(main())

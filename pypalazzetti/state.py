@@ -277,3 +277,10 @@ class _PalazzettiState:
     @property
     def hw_version(self) -> str:
         return self._properties["SYSTEM"]
+
+    def to_dict(self) -> str:
+        """Return a snapshot of the state."""
+        return {
+            "properties": self._properties.copy(),
+            "attributes": self._attributes.copy(),
+        }

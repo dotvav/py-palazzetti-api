@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.11
+* Fix temperature sensors
+
 ## 0.1.10
 * Fix `setup.py`
 

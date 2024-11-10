@@ -15,6 +15,7 @@ from .const import (
 from .state import _PalazzettiState, _PalazzettiAPIData
 from .exceptions import CommunicationError, ValidationError
 import aiohttp
+import json
 from json.decoder import JSONDecodeError
 
 
@@ -259,3 +260,13 @@ class PalazzettiClient:
         if merge_state:
             self._state.merge_state(payload)
         return payload
+
+    def to_json(self) -> str:
+        """Return a snapshot of the client as a json string."""
+        return json.dumps(
+            {
+                "host": self._hostname,
+                "connected": self.connected,
+                "state": self._state.to_dict(),
+            }
+        )
