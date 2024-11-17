@@ -22,6 +22,9 @@ async def main():
     print(f"Set fan speed: {await client.set_fan_auto()}")
     print(f"Fan speed: {client.fan_speed}")
     print("---")
+    for temp in client.list_temperatures():
+        print(f"{temp.description_key}={temp.value}")
+    print("---")
     print(client.to_json())
 
 

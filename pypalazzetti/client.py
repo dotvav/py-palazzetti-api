@@ -14,6 +14,8 @@ from .const import (
 )
 from .state import _PalazzettiState, _PalazzettiAPIData
 from .exceptions import CommunicationError, ValidationError
+from .temperature import TemperatureDefinition
+
 import aiohttp
 import json
 from json.decoder import JSONDecodeError
@@ -119,28 +121,32 @@ class PalazzettiClient:
 
     @property
     def T1(self) -> float:
-        """Return the T1 temperature."""
+        """DEPRECATED - Return the T1 temperature."""
         return self._state.T1
 
     @property
     def T2(self) -> float:
-        """Return the T2 temperature."""
+        """DEPRECATED - Return the T2 temperature."""
         return self._state.T2
 
     @property
     def T3(self) -> float:
-        """Return the T3 temperature."""
+        """DEPRECATED - Return the T3 temperature."""
         return self._state.T3
 
     @property
     def T4(self) -> float:
-        """Return the T4 temperature."""
+        """DEPRECATED - Return the T4 temperature."""
         return self._state.T4
 
     @property
     def T5(self) -> float:
-        """Return the T5 temperature."""
+        """DEPRECATED - Return the T5 temperature."""
         return self._state.T5
+
+    def list_temperatures(self) -> list[TemperatureDefinition]:
+        """Return a list of all available temperatures."""
+        return self._state.list_temperatures()
 
     @property
     def host(self) -> str:

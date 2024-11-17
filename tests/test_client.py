@@ -2,17 +2,18 @@
 
 from pypalazzetti.client import PalazzettiClient
 from pypalazzetti.state import _PalazzettiAPIData
+from pypalazzetti.temperature import TemperatureDescriptionKey
 from unittest.mock import patch
 import pytest
 
 
-def stdt_response():
-    with open("./tests/mock_json/GET_STDT.json", "r") as f:
+def stdt_response(device: str = "palazzetti_ginger"):
+    with open(f"./tests/mock_json/{device}/GET_STDT.json", "r") as f:
         return f.read()
 
 
-def alls_response():
-    with open("./tests/mock_json/GET_ALLS.json", "r") as f:
+def alls_response(device: str = "palazzetti_ginger"):
+    with open(f"./tests/mock_json/{device}/GET_ALLS.json", "r") as f:
         return f.read()
 
 
@@ -69,7 +70,7 @@ async def test_execute_command(mock_stdt_response_ok):
     assert success
 
 
-async def test_state(mock_stdt_response_ok, mock_alls_response_ok):
+async def test_state_ginger(mock_stdt_response_ok, mock_alls_response_ok):
     """Test the functions that return the state."""
     client = PalazzettiClient("127.0.0.1")
 
@@ -86,17 +87,8 @@ async def test_state(mock_stdt_response_ok, mock_alls_response_ok):
         assert await client.update_state()
 
     assert client.is_on
-    assert client.is_heating
+    assert not client.is_heating
     assert client.target_temperature == 21
-    assert client.room_temperature == 21.5
-    assert client.wood_combustion_temperature == 45
-    assert (client.T1, client.T2, client.T3, client.T4, client.T5) == (
-        21.5,
-        25.1,
-        45,
-        0,
-        0,
-    )
     assert client.host == "127.0.0.1"
     assert client.mac == "40:F3:85:71:23:45"
     assert client.pellet_quantity == 1807
@@ -104,3 +96,9 @@ async def test_state(mock_stdt_response_ok, mock_alls_response_ok):
     assert client.fan_speed == 6
     assert client.status == 51
     assert client.name == "Name"
+    temperatures = {
+        sensor.description_key: sensor.value() for sensor in client.list_temperatures()
+    }
+    assert len(temperatures) == 2
+    assert temperatures[TemperatureDescriptionKey.ROOM_TEMP] == 21.5
+    assert temperatures[TemperatureDescriptionKey.WOOD_COMBUSTION_TEMP] == 45

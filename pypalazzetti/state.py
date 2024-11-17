@@ -1,6 +1,7 @@
 """Palazzetti data parsing and logic."""
 
-from .const import OFF_STATUSES, HEATING_STATUSES, MAIN_PROBE_TEMPERATURE
+from .const import OFF_STATUSES, HEATING_STATUSES, TEMPERATURE_PROBES
+from .temperature import TemperatureDefinition, TemperatureDescriptionKey
 import json
 
 
@@ -182,9 +183,27 @@ class _PalazzettiState:
     def air_outlet_temperature(self) -> float:
         return self._attributes["T4"]
 
+    def _main_temperature_probe_index(self) -> int:
+        if self.is_hydro:
+            if self._properties["UICONFIG"] == 1:
+                return 1  # T2
+            elif self._properties["UICONFIG"] == 10:
+                return 4  # T5
+        return int(self._properties["MAINTPROBE"])
+
+    def _main_temperature_description(self) -> TemperatureDescriptionKey:
+        if self.is_hydro:
+            if self._properties["UICONFIG"] == 1:
+                return TemperatureDescriptionKey.RETURN_WATER_TEMP
+            elif self._properties["UICONFIG"] in [3, 4]:
+                return TemperatureDescriptionKey.TANK_WATER_TEMP
+        return TemperatureDescriptionKey.ROOM_TEMP
+
     @property
     def current_temperature(self) -> float:
-        return self._attributes[MAIN_PROBE_TEMPERATURE[self._properties["MAINTPROBE"]]]
+        return self._attributes[
+            TEMPERATURE_PROBES[self._main_temperature_probe_index()]
+        ]
 
     @property
     def T1(self) -> float:
@@ -297,6 +316,53 @@ class _PalazzettiState:
     @property
     def hw_version(self) -> str:
         return self._properties["SYSTEM"]
+
+    def list_temperatures(self) -> TemperatureDefinition:
+        """Return a list of temperature sensor definitions"""
+
+        result: list[TemperatureDefinition] = []
+
+        result.append(
+            TemperatureDefinition(
+                state_function=lambda: self._attributes[
+                    TEMPERATURE_PROBES[self._main_temperature_probe_index()]
+                ],
+                description_key=self._main_temperature_description(),
+            )
+        )
+
+        if self.has_air_outlet_temperature or self.air_outlet_temperature != 0:
+            result.append(
+                TemperatureDefinition(
+                    state_function=lambda: self._attributes["T4"],
+                    description_key=TemperatureDescriptionKey.AIR_OUTLET_TEMP,
+                )
+            )
+
+        if (
+            self.has_wood_combustion_temperature
+            or self.wood_combustion_temperature != 0
+        ):
+            result.append(
+                TemperatureDefinition(
+                    state_function=lambda: self._attributes["T3"],
+                    description_key=TemperatureDescriptionKey.WOOD_COMBUSTION_TEMP,
+                )
+            )
+
+        if self.is_hydro:
+            result.append(
+                TemperatureDefinition(
+                    state_function=lambda: self._attributes["T1"],
+                    description_key=TemperatureDescriptionKey.T1_HYDRO_TEMP,
+                ),
+                TemperatureDefinition(
+                    state_function=lambda: self._attributes["T2"],
+                    description_key=TemperatureDescriptionKey.T2_HYDRO_TEMP,
+                ),
+            )
+
+        return result
 
     def to_dict(self) -> str:
         """Return a snapshot of the state."""

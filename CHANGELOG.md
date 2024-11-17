@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.12
+* Fix `is_heating` state: remove ECOMODE (51) is not considered heating anymore
+* Refactor the temperature sensors. `PalazzettiClient.list_temperatures` will return a list of labelled temperature sensors that are present
+* `T1`, `T2`, `T3`, `T4`, `T5` properties of `PalazzettiClient` are marked as deprecated
+
 ## 0.1.11
 * Fix temperature sensors
 

@@ -1,0 +1,53 @@
+{
+  "INFO": {
+      "RSP": "OK",
+      "CMD": "GET ALLS",
+      "TS": 1731245177
+  },
+  "SUCCESS": true,
+  "DATA": {
+      "T2": 22.5,
+      "F2LF": 2,
+      "PQT": 53,
+      "PWR": 2,
+      "CHRSTATUS": 0,
+      "FANLMINMAX": [
+          0,
+          5,
+          0,
+          1,
+          0,
+          1
+      ],
+      "FDR": 0,
+      "F2V": 0,
+      "MOD": 1295,
+      "DPT": 0,
+      "APLWDAY": 1,
+      "MAC": "AA:AA:AA:71:F2:72",
+      "SETP": 20,
+      "FSTATUS": 0,
+      "APLTS": "2024-11-10 14:26:30",
+      "BECO": 1,
+      "STATUS": 9,
+      "T3": 26,
+      "T1": 125,
+      "PUMP": 0,
+      "T5": 21.8,
+      "F1RPM": 0,
+      "OUT": 0,
+      "F1V": 0,
+      "SN": "XXXXXXXXXXXXXXXXXX",
+      "EFLAGS": 1,
+      "T4": 0,
+      "LSTATUS": 51,
+      "F2L": 7,
+      "CORE": 44,
+      "DP": 0,
+      "VER": 3,
+      "IN": 3,
+      "SECO": 1.2,
+      "MBTYPE": 0,
+      "FWDATE": "2024-07-17"
+  }
+}
