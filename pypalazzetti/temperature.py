@@ -1,7 +1,6 @@
 """Temperature sensor definition"""
 
 from enum import Enum
-from typing import Callable
 
 
 class TemperatureDescriptionKey(str, Enum):
@@ -19,17 +18,13 @@ class TemperatureDescriptionKey(str, Enum):
 class TemperatureDefinition:
     """A temperature sensor"""
 
-    _state_function: Callable[[], float]
+    state_property: str
     description_key: TemperatureDescriptionKey
 
     def __init__(
         self,
-        state_function: Callable[[], float],
+        state_property: str,
         description_key: TemperatureDescriptionKey,
     ):
-        self._state_function = state_function
+        self.state_property = state_property
         self.description_key = description_key
-
-    def value(self) -> float:
-        """The value of the sensor"""
-        return self._state_function()

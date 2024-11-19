@@ -23,7 +23,7 @@ async def main():
     print(f"Fan speed: {client.fan_speed}")
     print("---")
     for temp in client.list_temperatures():
-        print(f"{temp.description_key}={temp.value}")
+        print(f"{temp.description_key}={getattr(client, temp.state_property)}")
     print("---")
     print(client.to_json())
 

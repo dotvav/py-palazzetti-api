@@ -134,6 +134,10 @@ class _PalazzettiState:
         return self._properties["PSENSLMIN"]
 
     @property
+    def pellet_level_max(self) -> float:
+        return self._properties["PSENSLMAX"]
+
+    @property
     def pellet_level_threshold(self) -> float:
         return self._properties["PSENSLTSH"]
 
@@ -324,9 +328,7 @@ class _PalazzettiState:
 
         result.append(
             TemperatureDefinition(
-                state_function=lambda: self._attributes[
-                    TEMPERATURE_PROBES[self._main_temperature_probe_index()]
-                ],
+                state_property=TEMPERATURE_PROBES[self._main_temperature_probe_index()],
                 description_key=self._main_temperature_description(),
             )
         )
@@ -334,7 +336,7 @@ class _PalazzettiState:
         if self.has_air_outlet_temperature or self.air_outlet_temperature != 0:
             result.append(
                 TemperatureDefinition(
-                    state_function=lambda: self._attributes["T4"],
+                    state_property="T4",
                     description_key=TemperatureDescriptionKey.AIR_OUTLET_TEMP,
                 )
             )
@@ -345,7 +347,7 @@ class _PalazzettiState:
         ):
             result.append(
                 TemperatureDefinition(
-                    state_function=lambda: self._attributes["T3"],
+                    state_property="T3",
                     description_key=TemperatureDescriptionKey.WOOD_COMBUSTION_TEMP,
                 )
             )
@@ -353,11 +355,11 @@ class _PalazzettiState:
         if self.is_hydro:
             result.append(
                 TemperatureDefinition(
-                    state_function=lambda: self._attributes["T1"],
+                    state_property="T1",
                     description_key=TemperatureDescriptionKey.T1_HYDRO_TEMP,
                 ),
                 TemperatureDefinition(
-                    state_function=lambda: self._attributes["T2"],
+                    state_property="T2",
                     description_key=TemperatureDescriptionKey.T2_HYDRO_TEMP,
                 ),
             )

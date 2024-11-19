@@ -121,27 +121,27 @@ class PalazzettiClient:
 
     @property
     def T1(self) -> float:
-        """DEPRECATED - Return the T1 temperature."""
+        """Return the T1 temperature."""
         return self._state.T1
 
     @property
     def T2(self) -> float:
-        """DEPRECATED - Return the T2 temperature."""
+        """Return the T2 temperature."""
         return self._state.T2
 
     @property
     def T3(self) -> float:
-        """DEPRECATED - Return the T3 temperature."""
+        """Return the T3 temperature."""
         return self._state.T3
 
     @property
     def T4(self) -> float:
-        """DEPRECATED - Return the T4 temperature."""
+        """Return the T4 temperature."""
         return self._state.T4
 
     @property
     def T5(self) -> float:
-        """DEPRECATED - Return the T5 temperature."""
+        """Return the T5 temperature."""
         return self._state.T5
 
     def list_temperatures(self) -> list[TemperatureDefinition]:
@@ -182,6 +182,34 @@ class PalazzettiClient:
     def pellet_quantity(self) -> int:
         """Return the pellet quantity."""
         return self._state.pellet_quantity
+
+    @property
+    def has_pellet_level(self) -> bool:
+        """Return the availability of the pellet level."""
+        return (
+            self._state.has_leveltronic_pellet_sensor
+            or self._state.has_capacitive_pellet_sensor
+        )
+
+    @property
+    def pellet_level(self) -> float:
+        """Return the pellet level."""
+        return self._state.pellet_level
+
+    @property
+    def pellet_level_min(self) -> float:
+        """Return the minimum pellet level."""
+        return self._state.pellet_level_min
+
+    @property
+    def pellet_level_max(self) -> float:
+        """Return the maximum pellet level."""
+        return self._state.pellet_level_max
+
+    @property
+    def pellet_level_threshold(self) -> float:
+        """Return the pellet level threshold."""
+        return self._state.pellet_level_threshold
 
     @property
     def is_on(self) -> bool:

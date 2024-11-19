@@ -97,7 +97,8 @@ async def test_state_ginger(mock_stdt_response_ok, mock_alls_response_ok):
     assert client.status == 51
     assert client.name == "Name"
     temperatures = {
-        sensor.description_key: sensor.value() for sensor in client.list_temperatures()
+        sensor.description_key: getattr(client, sensor.state_property)
+        for sensor in client.list_temperatures()
     }
     assert len(temperatures) == 2
     assert temperatures[TemperatureDescriptionKey.ROOM_TEMP] == 21.5
