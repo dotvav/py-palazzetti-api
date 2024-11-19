@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.13
+* Refactor temperatures and undeprecate `T1`, `T2`, `T3`, `T4`, `T5`
+* Expose `has_pellet_level` and `pellet_level`
+
 ## 0.1.12
 * Fix `is_heating` state: remove ECOMODE (51) is not considered heating anymore
 * Refactor the temperature sensors. `PalazzettiClient.list_temperatures` will return a list of labelled temperature sensors that are present
