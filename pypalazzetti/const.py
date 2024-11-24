@@ -19,7 +19,7 @@ STATUSES: Final[dict[int, str]] = {
     9: "cool_fluid",
     10: "fire_stop",
     11: "clean_fire",
-    12: "cool",
+    12: "cooling",
     50: "cleanup",
     51: "ecomode",
     241: "chimney_alarm",
@@ -32,7 +32,7 @@ STATUSES: Final[dict[int, str]] = {
     250: "flue_probe_failure",
     252: "exhaust_temp_high",
     253: "pellet_finished",
-    501: "OFF",
+    501: "off",
     502: "fueling",
     503: "ign_test",
     504: "burning",
@@ -56,21 +56,23 @@ STATUSES: Final[dict[int, str]] = {
     1508: "general_error",
 }
 
-HEATING_STATUSES = [2, 3, 4, 5, 6, 7, 502, 503, 504]
-OFF_STATUSES = [0, 1]
-TEMPERATURE_PROBES = ["T1", "T2", "T3", "T4", "T5"]
+HEATING_STATUSES: Final = [2, 3, 4, 5, 6, 7, 502, 503, 504]
+OFF_STATUSES: Final = [0, 1]
+TEMPERATURE_PROBES: Final = ["T1", "T2", "T3", "T4", "T5"]
 
 FAN_SILENT: Final = "SILENT"
 FAN_HIGH: Final = "HIGH"
 FAN_AUTO: Final = "AUTO"
 FAN_MODES: Final = [FAN_SILENT, "1", "2", "3", "4", "5", FAN_HIGH, FAN_AUTO]
 
-COMMAND_CHECK_ONLINE = "GET STAT"
-COMMAND_UPDATE_PROPERTIES = "GET STDT"
-COMMAND_UPDATE_STATE = "GET ALLS"
-COMMAND_SET_TEMPERATURE = "SET SETP"
-COMMAND_SET_FAN_SPEED = "SET RFAN"
-COMMAND_SET_FAN_SILENT = "SET SLNT 1"
-COMMAND_SET_POWER_MODE = "SET POWR"
-COMMAND_SET_ON = "CMD ON"
-COMMAND_SET_OFF = "CMD OFF"
+COMMAND_CHECK_ONLINE: Final = "GET STAT"
+COMMAND_UPDATE_PROPERTIES: Final = "GET STDT"
+COMMAND_UPDATE_STATE: Final = "GET ALLS"
+COMMAND_SET_TEMPERATURE: Final = "SET SETP"
+COMMAND_SET_FAN_SPEED: Final = "SET RFAN"
+COMMAND_SET_FAN_SILENT: Final = "SET SLNT 1"
+COMMAND_SET_POWER_MODE: Final = "SET POWR"
+COMMAND_SET_ON: Final = "CMD ON"
+COMMAND_SET_OFF: Final = "CMD OFF"
+
+REDACTED_DATA: Final = "XXXXXXXX"

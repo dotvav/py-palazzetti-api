@@ -11,6 +11,7 @@ from .const import (
     COMMAND_SET_TEMPERATURE,
     COMMAND_UPDATE_PROPERTIES,
     COMMAND_UPDATE_STATE,
+    REDACTED_DATA,
 )
 from .state import _PalazzettiState, _PalazzettiAPIData
 from .exceptions import CommunicationError, ValidationError
@@ -24,15 +25,16 @@ from json.decoder import JSONDecodeError
 class PalazzettiClient:
     """Interface class for the Overkiz API."""
 
-    _hostname: str
     _state = _PalazzettiState()
     connected = False
 
     def __init__(
         self,
         hostname: str,
+        session: aiohttp.ClientSession | None = None,
     ):
         self._hostname = hostname
+        self._session = session or aiohttp.ClientSession()
 
     async def connect(self) -> bool:
         """Connect to the device."""
@@ -326,9 +328,8 @@ class PalazzettiClient:
         )
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(request_url) as response:
-                    payload = _PalazzettiAPIData(await response.text())
+            async with self._session.get(request_url) as response:
+                payload = _PalazzettiAPIData(await response.text())
         except (TypeError, JSONDecodeError) as ex:
             self.connected = False
             raise CommunicationError("Invalid API response") from ex
@@ -340,12 +341,36 @@ class PalazzettiClient:
             self._state.merge_state(payload)
         return payload
 
-    def to_json(self) -> str:
+    def to_json(self, redact: bool = False) -> str:
         """Return a snapshot of the client as a json string."""
-        return json.dumps(
-            {
-                "host": self._hostname,
-                "connected": self.connected,
-                "state": self._state.to_dict(),
+        return json.dumps(self.to_dict(redact))
+
+    def to_dict(
+        self, redact: bool = False
+    ) -> dict[str, bool | dict[str, str | bool | int | float | list[int | str]]]:
+        """Return a snapshot of the client as a dict."""
+        data = {
+            "host": self._hostname,
+            "connected": self.connected,
+            "state": self._state.to_dict(),
+        }
+
+        if redact:
+            redacted = {
+                "DNS": [REDACTED_DATA],
+                "EADDR": REDACTED_DATA,
+                "EGW": REDACTED_DATA,
+                "EMAC": REDACTED_DATA,
+                "GATEWAY": REDACTED_DATA,
+                "MAC": REDACTED_DATA,
+                "SN": REDACTED_DATA,
+                "WBCST": REDACTED_DATA,
+                "WMAC": REDACTED_DATA,
+                "WGW": REDACTED_DATA,
+                "WSSID": REDACTED_DATA,
             }
-        )
+            data["host"] = REDACTED_DATA
+            data["state"]["properties"] = data["state"]["properties"] | redacted
+            data["state"]["attributes"] = data["state"]["attributes"] | redacted
+
+        return data

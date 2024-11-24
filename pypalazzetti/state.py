@@ -366,7 +366,9 @@ class _PalazzettiState:
 
         return result
 
-    def to_dict(self) -> str:
+    def to_dict(
+        self,
+    ) -> dict[str, bool | dict[str, str | bool | int | float | list[int | str]]]:
         """Return a snapshot of the state."""
         return {
             "properties": self._properties.copy(),

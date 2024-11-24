@@ -25,7 +25,7 @@ async def main():
     for temp in client.list_temperatures():
         print(f"{temp.description_key}={getattr(client, temp.state_property)}")
     print("---")
-    print(client.to_json())
+    print(client.to_json(redact=True))
 
 
 asyncio.new_event_loop().run_until_complete(main())
