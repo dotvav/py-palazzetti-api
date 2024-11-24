@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="pypalazzetti",
-    version="0.1.13",
+    version="0.1.14",
     author="Vincent Roukine",
     author_email="vincent.roukine@gmail.com",
     description="A Python library to access and control a Palazzetti stove through a Palazzetti Connection Box",
