@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.14
+* Make status codes lower case
+* Add `to_dict` function, allow to redact sensitive info
+* Allows an `aiohttp.ClientSession` to be passed in the `PalazzettiClient` constructor
+
 ## 0.1.13
 * Refactor temperatures and undeprecate `T1`, `T2`, `T3`, `T4`, `T5`
 * Expose `has_pellet_level` and `pellet_level`
