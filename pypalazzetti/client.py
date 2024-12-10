@@ -246,8 +246,7 @@ class PalazzettiClient:
     @property
     def fan_speed_min(self) -> int:
         """Return the minimum fan speed."""
-        # Remove 0. Some devices state 0 as the min, which is equivalent to silent, even when silent mode is not available
-        return max(self._state.main_fan_min, 1)
+        return self._state.main_fan_min
 
     @property
     def fan_speed_max(self) -> int:
@@ -279,7 +278,7 @@ class PalazzettiClient:
 
     async def set_fan_silent(self) -> bool:
         """Set the fan to silent mode."""
-        return await self.set_fan_speed(0)
+        return (await self._execute_command(command=COMMAND_SET_FAN_SILENT)).success
 
     async def set_fan_high(self) -> bool:
         """Set the fan to high mode."""
@@ -291,8 +290,6 @@ class PalazzettiClient:
 
     async def set_fan_speed(self, fan_speed: int) -> bool:
         """Set the fan speed."""
-        if fan_speed == 0 and self._state.has_fan_mode_silent:
-            return (await self._execute_command(command=COMMAND_SET_FAN_SILENT)).success
         if (
             (self._state.main_fan_min <= fan_speed <= self._state.main_fan_max)
             or (fan_speed == 6 and self._state.has_fan_mode_high)
