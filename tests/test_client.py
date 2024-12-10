@@ -1,19 +1,24 @@
 """Test the PalazzettiClient class."""
 
+from unittest.mock import patch
+
+import pytest
+
 from pypalazzetti.client import PalazzettiClient
+from pypalazzetti.config import PalazzettiClientConfig
 from pypalazzetti.state import _PalazzettiAPIData
 from pypalazzetti.temperature import TemperatureDescriptionKey
-from unittest.mock import patch
-import pytest
 
 
 def stdt_response(device: str = "palazzetti_ginger"):
-    with open(f"./tests/mock_json/{device}/GET_STDT.json", "r") as f:
+    with open(f"./tests/mock_json/{device}/GET_STDT.json") as f:
         return f.read()
 
 
-def alls_response(device: str = "palazzetti_ginger"):
-    with open(f"./tests/mock_json/{device}/GET_ALLS.json", "r") as f:
+def alls_response(device: str = "palazzetti_ginger", variant: str = None):
+    with open(
+        f"./tests/mock_json/{device}/GET_ALLS{("_" + variant if variant else "")}.json"
+    ) as f:
         return f.read()
 
 
@@ -42,6 +47,16 @@ def mock_alls_response_ok():
     return MockResponse(status=200, text=alls_response())
 
 
+@pytest.fixture
+def mock_alls_smaller_pqt():
+    return MockResponse(status=200, text=alls_response(variant="smaller_pqt"))
+
+
+@pytest.fixture
+def mock_alls_larger_pqt():
+    return MockResponse(status=200, text=alls_response(variant="larger_pqt"))
+
+
 async def test_connect():
     """Test the connect function."""
     client = PalazzettiClient("127.0.0.1")
@@ -57,7 +72,6 @@ async def test_connect():
 
 async def test_execute_command(mock_stdt_response_ok):
     """Test the _execute_command function"""
-
     client = PalazzettiClient("127.0.0.1")
 
     with (
@@ -80,7 +94,7 @@ async def test_state_ginger(mock_stdt_response_ok, mock_alls_response_ok):
     ):
         assert await client.connect()
 
-    # Connect and set state attributes
+    # Set state attributes
     with (
         patch("aiohttp.ClientSession.get", return_value=mock_alls_response_ok),
     ):
@@ -103,3 +117,67 @@ async def test_state_ginger(mock_stdt_response_ok, mock_alls_response_ok):
     assert len(temperatures) == 2
     assert temperatures[TemperatureDescriptionKey.ROOM_TEMP] == 21.5
     assert temperatures[TemperatureDescriptionKey.WOOD_COMBUSTION_TEMP] == 45
+
+
+async def test_pellet_quantity_not_sanitize(
+    mock_alls_response_ok,
+    mock_alls_smaller_pqt,
+    mock_alls_larger_pqt,
+):
+    client = PalazzettiClient(
+        "127.0.0.1", config=PalazzettiClientConfig(pellet_quantity_sanitize=False)
+    )
+
+    # Set state attributes
+    with (
+        patch("aiohttp.ClientSession.get", return_value=mock_alls_response_ok),
+    ):
+        assert await client.update_state()
+
+    assert client.pellet_quantity == 1807
+
+    # Set a smaller PQT
+    with (
+        patch("aiohttp.ClientSession.get", return_value=mock_alls_smaller_pqt),
+    ):
+        assert await client.update_state()
+    assert client.pellet_quantity == 1500
+
+    # Set a smaller PQT
+    with (
+        patch("aiohttp.ClientSession.get", return_value=mock_alls_larger_pqt),
+    ):
+        assert await client.update_state()
+    assert client.pellet_quantity == 2000
+
+
+async def test_pellet_quantity_sanitize(
+    mock_alls_response_ok,
+    mock_alls_smaller_pqt,
+    mock_alls_larger_pqt,
+):
+    client = PalazzettiClient(
+        "127.0.0.1", config=PalazzettiClientConfig(pellet_quantity_sanitize=True)
+    )
+
+    # Set state attributes
+    with (
+        patch("aiohttp.ClientSession.get", return_value=mock_alls_response_ok),
+    ):
+        assert await client.update_state()
+
+    assert client.pellet_quantity == 1807
+
+    # Set a smaller PQT
+    with (
+        patch("aiohttp.ClientSession.get", return_value=mock_alls_smaller_pqt),
+    ):
+        assert await client.update_state()
+    assert client.pellet_quantity == 1807
+
+    # Set a smaller PQT
+    with (
+        patch("aiohttp.ClientSession.get", return_value=mock_alls_larger_pqt),
+    ):
+        assert await client.update_state()
+    assert client.pellet_quantity == 2000

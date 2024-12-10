@@ -1,10 +1,16 @@
 """Python wrapper for the Palazzetti Connection Box API."""
 
+import json
+from json.decoder import JSONDecodeError
+
+import aiohttp
+
+from .config import PalazzettiClientConfig
 from .const import (
     API_COMMAND_URL_TEMPLATE,
     COMMAND_CHECK_ONLINE,
-    COMMAND_SET_FAN_SPEED,
     COMMAND_SET_FAN_SILENT,
+    COMMAND_SET_FAN_SPEED,
     COMMAND_SET_OFF,
     COMMAND_SET_ON,
     COMMAND_SET_POWER_MODE,
@@ -13,33 +19,32 @@ from .const import (
     COMMAND_UPDATE_STATE,
     REDACTED_DATA,
 )
-from .state import _PalazzettiState, _PalazzettiAPIData
 from .exceptions import CommunicationError, ValidationError
+from .state import _PalazzettiAPIData, _PalazzettiState
 from .temperature import TemperatureDefinition
-
-import aiohttp
-import json
-from json.decoder import JSONDecodeError
 
 
 class PalazzettiClient:
     """Interface class for the Overkiz API."""
 
-    _state = _PalazzettiState()
     connected = False
 
     def __init__(
         self,
         hostname: str,
         session: aiohttp.ClientSession | None = None,
+        config: PalazzettiClientConfig = PalazzettiClientConfig(),
     ):
         self._hostname = hostname
         self._session = session or aiohttp.ClientSession()
+        self._config = config
+        self._state = _PalazzettiState(config)
 
     async def connect(self) -> bool:
         """Connect to the device."""
         r = await self._execute_command(
-            command=COMMAND_UPDATE_PROPERTIES, merge_state=False
+            command=COMMAND_UPDATE_PROPERTIES,
+            merge_state=False,
         )
         if r.success:
             self._state.merge_properties(r)
@@ -61,10 +66,10 @@ class PalazzettiClient:
             await self.connect()
         # Check if connection was successful before updating
         if self.connected:
-            self._connected = (
+            self.connected = (
                 await self._execute_command(command=COMMAND_UPDATE_STATE)
             ).success
-        return self._connected
+        return self.connected
 
     @property
     def sw_version(self) -> str:
@@ -73,7 +78,7 @@ class PalazzettiClient:
 
     @property
     def hw_version(self) -> str:
-        """return the hardware version"""
+        """Return the hardware version"""
         return self._state.hw_version
 
     @property
@@ -266,7 +271,8 @@ class PalazzettiClient:
             and temperature <= self._state.target_temperature_max
         ):
             res = await self._execute_command(
-                command=COMMAND_SET_TEMPERATURE, parameter=temperature
+                command=COMMAND_SET_TEMPERATURE,
+                parameter=temperature,
             )
             return self._state.merge_state(res)
         return False
@@ -294,7 +300,8 @@ class PalazzettiClient:
         ):
             return (
                 await self._execute_command(
-                    command=COMMAND_SET_FAN_SPEED, parameter=fan_speed
+                    command=COMMAND_SET_FAN_SPEED,
+                    parameter=fan_speed,
                 )
             ).success
         raise ValidationError(f"Main fan speed ({fan_speed}) out of range.")
@@ -304,7 +311,8 @@ class PalazzettiClient:
         if 1 <= power <= 5:
             return (
                 await self._execute_command(
-                    command=COMMAND_SET_POWER_MODE, parameter=power
+                    command=COMMAND_SET_POWER_MODE,
+                    parameter=power,
                 )
             ).success
         raise ValidationError(f"Power mode ({power}) out of range.")
@@ -314,13 +322,16 @@ class PalazzettiClient:
         if self._state.has_on_off_switch:
             return (
                 await self._execute_command(
-                    command=COMMAND_SET_ON if on else COMMAND_SET_OFF
+                    command=COMMAND_SET_ON if on else COMMAND_SET_OFF,
                 )
             ).success
         raise ValidationError("Main operation switch not available.")
 
     async def _execute_command(
-        self, command: str, parameter: str | int = None, merge_state=True
+        self,
+        command: str,
+        parameter: str | int = None,
+        merge_state=True,
     ) -> _PalazzettiAPIData:
         request_url = API_COMMAND_URL_TEMPLATE.format(
             host=self._hostname,
@@ -346,7 +357,8 @@ class PalazzettiClient:
         return json.dumps(self.to_dict(redact))
 
     def to_dict(
-        self, redact: bool = False
+        self,
+        redact: bool = False,
     ) -> dict[str, bool | dict[str, str | bool | int | float | list[int | str]]]:
         """Return a snapshot of the client as a dict."""
         data = {

@@ -1,8 +1,10 @@
 """Palazzetti data parsing and logic."""
 
-from .const import OFF_STATUSES, HEATING_STATUSES, TEMPERATURE_PROBES
-from .temperature import TemperatureDefinition, TemperatureDescriptionKey
 import json
+
+from .config import PalazzettiClientConfig
+from .const import HEATING_STATUSES, OFF_STATUSES, TEMPERATURE_PROBES
+from .temperature import TemperatureDefinition, TemperatureDescriptionKey
 
 
 class _PalazzettiAPIData(dict[str, bool | dict[str, str | int | float]]):
@@ -10,7 +12,6 @@ class _PalazzettiAPIData(dict[str, bool | dict[str, str | int | float]]):
 
     def __init__(self, payload: str):
         super().__init__(json.loads(payload))
-        pass
 
     @property
     def success(self):
@@ -18,8 +19,13 @@ class _PalazzettiAPIData(dict[str, bool | dict[str, str | int | float]]):
 
 
 class _PalazzettiState:
-    _properties: dict[str, str | int | float] = {}  # Static data
-    _attributes: dict[str, str | int | float] = {}  # Mostly sensors data
+    _properties: dict[str, str | int | float]  # Static data
+    _attributes: dict[str, str | int | float]  # Mostly sensors data
+
+    def __init__(self, config: PalazzettiClientConfig):
+        self._properties = {}
+        self._attributes = {}
+        self._config = config
 
     def merge_properties(self, state_data: _PalazzettiAPIData) -> bool:
         """Updates the current properties."""
@@ -28,9 +34,16 @@ class _PalazzettiState:
             return True
         return False
 
-    def merge_state(self, state_data: _PalazzettiAPIData) -> bool:
+    def merge_state(
+        self,
+        state_data: _PalazzettiAPIData,
+    ) -> bool:
         """Updates the attributes."""
         if state_data.success:
+            if self._config.pellet_quantity_sanitize and "PQT" in self._attributes:
+                state_data["DATA"]["PQT"] = max(
+                    state_data["DATA"]["PQT"], self._attributes["PQT"]
+                )
             self._attributes = self._attributes | state_data["DATA"]
             return True
         return False
@@ -191,7 +204,7 @@ class _PalazzettiState:
         if self.is_hydro:
             if self._properties["UICONFIG"] == 1:
                 return 1  # T2
-            elif self._properties["UICONFIG"] == 10:
+            if self._properties["UICONFIG"] == 10:
                 return 4  # T5
         return int(self._properties["MAINTPROBE"])
 
@@ -199,7 +212,7 @@ class _PalazzettiState:
         if self.is_hydro:
             if self._properties["UICONFIG"] == 1:
                 return TemperatureDescriptionKey.RETURN_WATER_TEMP
-            elif self._properties["UICONFIG"] in [3, 4]:
+            if self._properties["UICONFIG"] in [3, 4]:
                 return TemperatureDescriptionKey.TANK_WATER_TEMP
         return TemperatureDescriptionKey.ROOM_TEMP
 
@@ -323,14 +336,13 @@ class _PalazzettiState:
 
     def list_temperatures(self) -> TemperatureDefinition:
         """Return a list of temperature sensor definitions"""
-
         result: list[TemperatureDefinition] = []
 
         result.append(
             TemperatureDefinition(
                 state_property=TEMPERATURE_PROBES[self._main_temperature_probe_index()],
                 description_key=self._main_temperature_description(),
-            )
+            ),
         )
 
         if self.has_air_outlet_temperature or self.air_outlet_temperature != 0:
@@ -338,7 +350,7 @@ class _PalazzettiState:
                 TemperatureDefinition(
                     state_property="T4",
                     description_key=TemperatureDescriptionKey.AIR_OUTLET_TEMP,
-                )
+                ),
             )
 
         if (
@@ -349,7 +361,7 @@ class _PalazzettiState:
                 TemperatureDefinition(
                     state_property="T3",
                     description_key=TemperatureDescriptionKey.WOOD_COMBUSTION_TEMP,
-                )
+                ),
             )
 
         if self.is_hydro:
