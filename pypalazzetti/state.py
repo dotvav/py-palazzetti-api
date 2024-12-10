@@ -40,7 +40,11 @@ class _PalazzettiState:
     ) -> bool:
         """Updates the attributes."""
         if state_data.success:
-            if self._config.pellet_quantity_sanitize and "PQT" in self._attributes:
+            if (
+                "PQT" in state_data["DATA"]
+                and self._config.pellet_quantity_sanitize
+                and "PQT" in self._attributes
+            ):
                 state_data["DATA"]["PQT"] = max(
                     state_data["DATA"]["PQT"], self._attributes["PQT"]
                 )
@@ -108,7 +112,7 @@ class _PalazzettiState:
 
     @property
     def has_fan_mode_silent(self) -> bool:
-        return self._properties["FAN2TYPE"] > 2
+        return self._properties["FAN2TYPE"] > 2 or self.main_fan_min == 0
 
     @property
     def has_fan_mode_auto(self) -> bool:
