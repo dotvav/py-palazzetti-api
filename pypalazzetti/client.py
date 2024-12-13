@@ -278,7 +278,11 @@ class PalazzettiClient:
 
     async def set_fan_silent(self) -> bool:
         """Set the fan to silent mode."""
-        return (await self._execute_command(command=COMMAND_SET_FAN_SILENT)).success
+        return (
+            await self._execute_command(
+                command=COMMAND_SET_FAN_SILENT, merge_state=True
+            )
+        ).success
 
     async def set_fan_high(self) -> bool:
         """Set the fan to high mode."""
@@ -297,8 +301,7 @@ class PalazzettiClient:
         ):
             return (
                 await self._execute_command(
-                    command=COMMAND_SET_FAN_SPEED,
-                    parameter=fan_speed,
+                    command=COMMAND_SET_FAN_SPEED, parameter=fan_speed, merge_state=True
                 )
             ).success
         raise ValidationError(f"Main fan speed ({fan_speed}) out of range.")
@@ -373,6 +376,7 @@ class PalazzettiClient:
                 "GATEWAY": REDACTED_DATA,
                 "MAC": REDACTED_DATA,
                 "SN": REDACTED_DATA,
+                "WADR": REDACTED_DATA,
                 "WBCST": REDACTED_DATA,
                 "WMAC": REDACTED_DATA,
                 "WGW": REDACTED_DATA,
