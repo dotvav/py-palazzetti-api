@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.15
+* Add more devices for test mocks
+* Sanitize the pellets quantity to prevent the value from decreasing
+* Bugfix: distinguish fan speed 0 from silent
+
 ## 0.1.14
 * Make status codes lower case
 * Add `to_dict` function, allow to redact sensitive info
