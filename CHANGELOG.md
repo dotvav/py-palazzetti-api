@@ -4,6 +4,7 @@
 * Add more devices for test mocks
 * Sanitize the pellets quantity to prevent the value from decreasing
 * Bugfix: distinguish fan speed 0 from silent
+* Bugfix: redact the wifi address when a redacted json is requested
 
 ## 0.1.14
 * Make status codes lower case
