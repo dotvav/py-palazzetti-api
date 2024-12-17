@@ -16,9 +16,8 @@ def stdt_response(device: str = "palazzetti_ginger"):
 
 
 def alls_response(device: str = "palazzetti_ginger", variant: str = None):
-    with open(
-        f"./tests/mock_json/{device}/GET_ALLS{("_" + variant if variant else "")}.json"
-    ) as f:
+    variant_modifier = ("_" + variant) if variant else ""
+    with open(f"./tests/mock_json/{device}/GET_ALLS{variant_modifier}.json") as f:
         return f.read()
 
 
