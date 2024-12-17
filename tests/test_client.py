@@ -49,12 +49,12 @@ def mock_alls_response_ok():
 
 @pytest.fixture
 def mock_alls_smaller_pqt():
-    return MockResponse(status=200, text=alls_response(variant="smaller_pqt"))
+    return MockResponse(status=200, text=alls_response(variant="smaller_PQT"))
 
 
 @pytest.fixture
 def mock_alls_larger_pqt():
-    return MockResponse(status=200, text=alls_response(variant="larger_pqt"))
+    return MockResponse(status=200, text=alls_response(variant="larger_PQT"))
 
 
 async def test_connect():
