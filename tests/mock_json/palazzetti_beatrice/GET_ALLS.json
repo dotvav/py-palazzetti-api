@@ -1,0 +1,55 @@
+{
+    "INFO": {
+      "RSP": "OK",
+      "CMD": "GET ALLS",
+      "TS": 1731245177
+    },
+    "SUCCESS": true,
+    "DATA": {
+        "PSENSCSTA": 1,
+        "F2LF": 0,
+        "PQT": 884,
+        "PWR": 5,
+        "CHRSTATUS": 0,
+        "FANLMINMAX": [
+          2,
+          5,
+          0,
+          1,
+          0,
+          1
+        ],
+        "FDR": 2.5,
+        "F2V": 170,
+        "MOD": 332,
+        "DPT": 0,
+        "APLWDAY": 7,
+        "MAC": "XXXXXXXX",
+        "SETP": 24,
+        "APLTS": "2025-01-01 11:21:26",
+        "STATUS": 6,
+        "T3": 410,
+        "T1": 20.3,
+        "PUMP": 0,
+        "T5": 0,
+        "F1RPM": 2417,
+        "OUT": 6,
+        "SN": "XXXXXXXX",
+        "F1V": 2417,
+        "EFLAGS": 0,
+        "LSTATUS": 6,
+        "T4": 0,
+        "T2": 31.3,
+        "F2L": 3,
+        "CORE": 136,
+        "DP": 1046,
+        "PSENSLEMP": 0,
+        "IN": 15,
+        "FWDATE": "2021-07-22",
+        "VER": 47,
+        "MBTYPE": 0,
+        "DNS": [
+          "XXXXXXXX"
+        ]
+    }
+}
