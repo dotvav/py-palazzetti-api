@@ -112,7 +112,7 @@ class _PalazzettiState:
 
     @property
     def has_fan_mode_silent(self) -> bool:
-        return self._properties["FAN2TYPE"] > 2 or self.main_fan_min == 0
+        return self._properties["FAN2TYPE"] > 2
 
     @property
     def has_fan_mode_auto(self) -> bool:
