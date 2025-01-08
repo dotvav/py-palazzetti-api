@@ -63,7 +63,17 @@ TEMPERATURE_PROBES: Final = ["T1", "T2", "T3", "T4", "T5"]
 FAN_SILENT: Final = "SILENT"
 FAN_HIGH: Final = "HIGH"
 FAN_AUTO: Final = "AUTO"
-FAN_MODES: Final = [FAN_SILENT, "1", "2", "3", "4", "5", FAN_HIGH, FAN_AUTO]
+FAN_MODES: Final = [
+    FAN_SILENT,
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    FAN_HIGH,
+    FAN_AUTO,
+]  # FAN_SILENT is deprecated
 
 COMMAND_CHECK_ONLINE: Final = "GET STAT"
 COMMAND_UPDATE_PROPERTIES: Final = "GET STDT"
