@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.16
+* Fix the silent mode
+* Make fan speed 0 available
+* Fix a bug that throws an exception when listing the temperatiures on hydro stoves (issue #6)
+
 ## 0.1.15
 * Add more devices for test mocks
 * Sanitize the pellets quantity to prevent the value from decreasing
