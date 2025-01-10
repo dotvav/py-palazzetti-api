@@ -374,6 +374,8 @@ class _PalazzettiState:
                     state_property="T1",
                     description_key=TemperatureDescriptionKey.T1_HYDRO_TEMP,
                 ),
+            )
+            result.append(
                 TemperatureDefinition(
                     state_property="T2",
                     description_key=TemperatureDescriptionKey.T2_HYDRO_TEMP,
