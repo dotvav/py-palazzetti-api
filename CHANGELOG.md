@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.17
+* Second and third fans control
+* Code quality improvements
+
 ## 0.1.16
 * Fix the silent mode
 * Make fan speed 0 available
