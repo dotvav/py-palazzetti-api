@@ -180,8 +180,19 @@ class PalazzettiClient:
 
     @property
     def fan_speed(self) -> int:
-        """Return the fan mode."""
+        """DEPRECATED - Return the fan mode."""
         return self._state.main_fan_speed
+
+    def current_fan_speed(self, fan: FanType = FanType.MAIN) -> int:
+        """Return a fan's speed"""
+        if fan == FanType.MAIN:
+            return self._state.main_fan_speed
+        elif fan == FanType.SECOND:
+            return self._state.second_fan_speed
+        elif fan == FanType.THIRD:
+            return self._state.third_fan_speed
+        else:
+            return 0
 
     @property
     def power_mode(self) -> int:
