@@ -10,7 +10,9 @@ from .const import (
     API_COMMAND_URL_TEMPLATE,
     COMMAND_CHECK_ONLINE,
     COMMAND_SET_FAN_SILENT,
-    COMMAND_SET_FAN_SPEED,
+    COMMAND_SET_MAIN_FAN_SPEED,
+    COMMAND_SET_SECOND_FAN_SPEED,
+    COMMAND_SET_THIRD_FAN_SPEED,
     COMMAND_SET_OFF,
     COMMAND_SET_ON,
     COMMAND_SET_POWER_MODE,
@@ -20,6 +22,7 @@ from .const import (
     REDACTED_DATA,
 )
 from .exceptions import CommunicationError, ValidationError
+from .fan import FanType
 from .state import _PalazzettiAPIData, _PalazzettiState
 from .temperature import TemperatureDefinition
 
@@ -243,15 +246,45 @@ class PalazzettiClient:
         """Check if the fan has the auto mode available."""
         return self._state.has_fan_mode_auto
 
+    def has_fan(self, fan: FanType = FanType.MAIN) -> bool:
+        """Check if a fan is available"""
+        if fan == FanType.MAIN:
+            return self._state.has_main_fan
+        elif fan == FanType.SECOND:
+            return self._state.has_second_fan
+        elif fan == FanType.THIRD:
+            return self._state.has_third_fan
+        return False
+
     @property
     def fan_speed_min(self) -> int:
-        """Return the minimum fan speed."""
+        """DEPRRECATED - Return the minimum fan speed."""
         return self._state.main_fan_min
 
     @property
     def fan_speed_max(self) -> int:
-        """Return the maximum fan speed."""
+        """DEPRRECATED - Return the maximum fan speed."""
         return self._state.main_fan_max
+
+    def min_fan_speed(self, fan: FanType = FanType.MAIN) -> int:
+        """Return the minimum fan speed."""
+        if fan == FanType.MAIN:
+            return self._state.main_fan_min
+        elif fan == FanType.SECOND:
+            return self._state.second_fan_min
+        elif fan == FanType.THIRD:
+            return self._state.third_fan_min
+        return 0
+
+    def max_fan_speed(self, fan: FanType = FanType.MAIN) -> int:
+        """Return the maximum fan speed."""
+        if fan == FanType.MAIN:
+            return self._state.main_fan_max
+        elif fan == FanType.SECOND:
+            return self._state.second_fan_max
+        elif fan == FanType.THIRD:
+            return self._state.third_fan_max
+        return 1
 
     @property
     def target_temperature_min(self) -> int:
@@ -292,19 +325,35 @@ class PalazzettiClient:
         """Set the fan to auto mode."""
         return await self.set_fan_speed(7)
 
-    async def set_fan_speed(self, fan_speed: int) -> bool:
+    async def set_fan_speed(self, fan_speed: int, fan: FanType = FanType.MAIN) -> bool:
         """Set the fan speed."""
+        if not self.has_fan(fan):
+            raise ValidationError(f'Fan "{fan}" not available.')
+
         if (
-            (self._state.main_fan_min <= fan_speed <= self._state.main_fan_max)
-            or (fan_speed == 6 and self._state.has_fan_mode_high)
-            or (fan_speed == 7 and self._state.has_fan_mode_auto)
+            (self.min_fan_speed(fan) <= fan_speed <= self.max_fan_speed(fan))
+            or (
+                fan == FanType.MAIN and fan_speed == 6 and self._state.has_fan_mode_high
+            )
+            or (
+                fan == FanType.MAIN and fan_speed == 7 and self._state.has_fan_mode_auto
+            )
         ):
+            if fan == FanType.SECOND:
+                command = COMMAND_SET_SECOND_FAN_SPEED
+            elif fan == FanType.THIRD:
+                command = COMMAND_SET_THIRD_FAN_SPEED
+            else:
+                command = COMMAND_SET_MAIN_FAN_SPEED
+
             return (
                 await self._execute_command(
-                    command=COMMAND_SET_FAN_SPEED, parameter=fan_speed, merge_state=True
+                    command=command,
+                    parameter=fan_speed,
+                    merge_state=True,
                 )
             ).success
-        raise ValidationError(f"Main fan speed ({fan_speed}) out of range.")
+        raise ValidationError(f'Fan "{fan}" speed ({fan_speed}) out of range.')
 
     async def set_power_mode(self, power: int) -> bool:
         """Set the power mode."""
@@ -330,7 +379,7 @@ class PalazzettiClient:
     async def _execute_command(
         self,
         command: str,
-        parameter: str | int = None,
+        parameter: str | int | None = None,
         merge_state=True,
     ) -> _PalazzettiAPIData:
         request_url = API_COMMAND_URL_TEMPLATE.format(
