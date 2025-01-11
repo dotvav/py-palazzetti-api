@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.18
+* Bugfix: missing current_fan_speed function
+
 ## 0.1.17
 * Second and third fans control
 * Code quality improvements
