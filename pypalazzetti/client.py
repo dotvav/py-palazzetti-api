@@ -11,8 +11,8 @@ from .const import (
     COMMAND_CHECK_ONLINE,
     COMMAND_SET_FAN_SILENT,
     COMMAND_SET_MAIN_FAN_SPEED,
-    COMMAND_SET_SECOND_FAN_SPEED,
-    COMMAND_SET_THIRD_FAN_SPEED,
+    COMMAND_SET_LEFT_FAN_SPEED,
+    COMMAND_SET_RIGHT_FAN_SPEED,
     COMMAND_SET_OFF,
     COMMAND_SET_ON,
     COMMAND_SET_POWER_MODE,
@@ -187,10 +187,10 @@ class PalazzettiClient:
         """Return a fan's speed"""
         if fan == FanType.MAIN:
             return self._state.main_fan_speed
-        elif fan == FanType.SECOND:
-            return self._state.second_fan_speed
-        elif fan == FanType.THIRD:
-            return self._state.third_fan_speed
+        elif fan == FanType.LEFT:
+            return self._state.left_fan_speed
+        elif fan == FanType.RIGHT:
+            return self._state.right_fan_speed
         else:
             return 0
 
@@ -261,10 +261,10 @@ class PalazzettiClient:
         """Check if a fan is available"""
         if fan == FanType.MAIN:
             return self._state.has_main_fan
-        elif fan == FanType.SECOND:
-            return self._state.has_second_fan
-        elif fan == FanType.THIRD:
-            return self._state.has_third_fan
+        elif fan == FanType.LEFT:
+            return self._state.has_left_fan
+        elif fan == FanType.RIGHT:
+            return self._state.has_right_fan
         return False
 
     @property
@@ -281,20 +281,20 @@ class PalazzettiClient:
         """Return the minimum fan speed."""
         if fan == FanType.MAIN:
             return self._state.main_fan_min
-        elif fan == FanType.SECOND:
-            return self._state.second_fan_min
-        elif fan == FanType.THIRD:
-            return self._state.third_fan_min
+        elif fan == FanType.LEFT:
+            return self._state.left_fan_min
+        elif fan == FanType.RIGHT:
+            return self._state.right_fan_min
         return 0
 
     def max_fan_speed(self, fan: FanType = FanType.MAIN) -> int:
         """Return the maximum fan speed."""
         if fan == FanType.MAIN:
             return self._state.main_fan_max
-        elif fan == FanType.SECOND:
-            return self._state.second_fan_max
-        elif fan == FanType.THIRD:
-            return self._state.third_fan_max
+        elif fan == FanType.LEFT:
+            return self._state.left_fan_max
+        elif fan == FanType.RIGHT:
+            return self._state.right_fan_max
         return 1
 
     @property
@@ -350,10 +350,10 @@ class PalazzettiClient:
                 fan == FanType.MAIN and fan_speed == 7 and self._state.has_fan_mode_auto
             )
         ):
-            if fan == FanType.SECOND:
-                command = COMMAND_SET_SECOND_FAN_SPEED
-            elif fan == FanType.THIRD:
-                command = COMMAND_SET_THIRD_FAN_SPEED
+            if fan == FanType.LEFT:
+                command = COMMAND_SET_LEFT_FAN_SPEED
+            elif fan == FanType.RIGHT:
+                command = COMMAND_SET_RIGHT_FAN_SPEED
             else:
                 command = COMMAND_SET_MAIN_FAN_SPEED
 

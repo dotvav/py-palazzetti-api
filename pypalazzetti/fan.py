@@ -3,8 +3,8 @@
 from enum import Enum
 
 
-# class syntax
 class FanType(Enum):
-    MAIN = 1
-    SECOND = 2
-    THIRD = 3
+    FUMES = 1
+    MAIN = 2
+    LEFT = 3
+    RIGHT = 4

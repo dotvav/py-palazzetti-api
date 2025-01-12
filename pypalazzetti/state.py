@@ -74,11 +74,11 @@ class _PalazzettiState:
 
     @property
     def has_chrono(self) -> bool:
-        return self._properties["CHRONOTYPE"] > 1
+        return self._properties.get("CHRONOTYPE") > 1
 
     @property
     def has_target_temperature(self) -> bool:
-        return self._attributes["SETP"] != 0
+        return self._attributes.get("SETP") != 0
 
     @property
     def has_on_off_switch(self) -> bool:
@@ -104,61 +104,59 @@ class _PalazzettiState:
 
     @property
     def is_first_fan_on(self) -> bool:
-        return bool(self._attributes["F2LF"])
+        return bool(self._attributes.get("F2LF", 0))
 
     @property
     def has_fan_mode_silent(self) -> bool:
-        return self._properties["FAN2TYPE"] > 2
+        return self._properties.get("FAN2TYPE", 0) > 2
 
     @property
     def has_fan_mode_auto(self) -> bool:
-        return self._properties["FAN2MODE"] in [2, 3]
+        return self._properties.get("FAN2MODE", 0) in [2, 3]
 
     @property
     def has_fan_mode_high(self) -> bool:
-        return self._properties["FAN2MODE"] == 3
+        return self._properties.get("FAN2MODE", 0) == 3
 
     @property
     def has_fan_mode_prop(self) -> bool:
-        return self._properties["FAN2MODE"] == 4
+        return self._properties.get("FAN2MODE", 0) == 4
 
     @property
     def has_main_fan(self) -> bool:
-        return self._properties["FAN2TYPE"] > 1
+        return self._properties.get("FAN2TYPE", 0) > 1
 
     @property
-    def has_second_fan(self) -> bool:
-        return self._properties["FAN2TYPE"] > 2
+    def has_left_fan(self) -> bool:
+        return self._properties.get("FAN2TYPE", 0) > 3
 
     @property
-    def has_third_fan(self) -> bool:
-        return self._properties["FAN2TYPE"] > 3
+    def has_right_fan(self) -> bool:
+        return self._properties.get("FAN2TYPE", 0) > 2
 
     @property
     def has_leveltronic_pellet_sensor(self) -> bool:
-        return self._properties["PSENSTYPE"] == 1
+        return self._properties.get("PSENSTYPE", 0) == 1
 
     @property
     def has_capacitive_pellet_sensor(self) -> bool:
-        return self._properties["PSENSTYPE"] == 2
+        return self._properties.get("PSENSTYPE", 0) == 2
 
     @property
     def pellet_level_min(self) -> float:
-        return float(self._properties["PSENSLMIN"])
+        return float(self._properties.get("PSENSLMIN", 0))
 
     @property
     def pellet_level_max(self) -> float:
-        return float(self._properties["PSENSLMAX"])
+        return float(self._properties.get("PSENSLMAX", 0))
 
     @property
     def pellet_level_threshold(self) -> float:
-        return float(self._properties["PSENSLTSH"])
+        return float(self._properties.get("PSENSLTSH", 0))
 
     @property
     def pellet_level(self) -> float:
-        if "PLEVEL" in self._attributes:
-            return float(self._attributes["PLEVEL"])
-        return None
+        return float(self._attributes.get("PLEVEL", 0))
 
     @property
     def has_wood_combustion_temperature(self) -> bool:
@@ -172,15 +170,15 @@ class _PalazzettiState:
 
     @property
     def has_door_control(self) -> bool:
-        return self._properties["DOORMOTOR"] == 1
+        return self._properties.get("DOORMOTOR", 0) == 1
 
     @property
     def has_light_control(self) -> bool:
-        return self._properties["LIGHTCONT"] == 1
+        return self._properties.get("LIGHTCONT", 0) == 1
 
     @property
     def product_type(self) -> int:
-        return int(self._properties["STOVETYPE"])
+        return int(self._properties.get("STOVETYPE", 0))
 
     @property
     def is_product_on(self) -> bool:
@@ -188,19 +186,19 @@ class _PalazzettiState:
 
     @property
     def hydro_t1_temperature(self) -> float:
-        return float(self._attributes["T1"])
+        return float(self._attributes.get("T1", 0))
 
     @property
     def hydro_t2_temperature(self) -> float:
-        return float(self._attributes["T2"])
+        return float(self._attributes.get("T2", 0))
 
     @property
     def wood_combustion_temperature(self) -> float:
-        return float(self._attributes["T3"])
+        return float(self._attributes.get("T3", 0))
 
     @property
     def air_outlet_temperature(self) -> float:
-        return float(self._attributes["T4"])
+        return float(self._attributes.get("T4", 0))
 
     def _main_temperature_probe_index(self) -> int:
         if self.is_hydro:
@@ -226,51 +224,51 @@ class _PalazzettiState:
 
     @property
     def T1(self) -> float:
-        return float(self._attributes["T1"])
+        return float(self._attributes.get("T1", 0))
 
     @property
     def T2(self) -> float:
-        return float(self._attributes["T2"])
+        return float(self._attributes.get("T2", 0))
 
     @property
     def T3(self) -> float:
-        return float(self._attributes["T3"])
+        return float(self._attributes.get("T3", 0))
 
     @property
     def T4(self) -> float:
-        return float(self._attributes["T4"])
+        return float(self._attributes.get("T4", 0))
 
     @property
     def T5(self) -> float:
-        return float(self._attributes["T5"])
+        return float(self._attributes.get("T5", 0))
 
     @property
     def power_mode(self) -> int:
-        return int(self._attributes["PWR"])
+        return int(self._attributes.get("PWR", 0))
 
     @property
     def target_temperature_min(self) -> int:
-        return int(self._properties["SPLMIN"])
+        return int(self._properties.get("SPLMIN", 0))
 
     @property
     def target_temperature_max(self) -> int:
-        return int(self._properties["SPLMAX"])
+        return int(self._properties.get("SPLMAX", 0))
 
     @property
     def target_temperature(self) -> int:
-        return int(self._attributes["SETP"])
+        return int(self._attributes.get("SETP", 0))
 
     @property
     def main_fan_speed(self) -> int:
-        return int(self._attributes["F2L"])
+        return int(self._attributes.get("F2L", 0))
 
     @property
-    def second_fan_speed(self) -> int:
-        return int(self._attributes["F3L"])
+    def left_fan_speed(self) -> int:
+        return int(self._attributes.get("F3L", 0))
 
     @property
-    def third_fan_speed(self) -> int:
-        return int(self._attributes["F4L"])
+    def right_fan_speed(self) -> int:
+        return int(self._attributes.get("F4L", 0))
 
     @property
     def main_fan_min(self) -> int:
@@ -281,44 +279,44 @@ class _PalazzettiState:
         return int(self._attributes["FANLMINMAX"][1])
 
     @property
-    def second_fan_min(self) -> int:
+    def left_fan_min(self) -> int:
         return int(self._attributes["FANLMINMAX"][2])
 
     @property
-    def second_fan_max(self) -> int:
+    def left_fan_max(self) -> int:
         return int(self._attributes["FANLMINMAX"][3])
 
     @property
-    def third_fan_min(self) -> int:
+    def right_fan_min(self) -> int:
         return int(self._attributes["FANLMINMAX"][4])
 
     @property
-    def third_fan_max(self) -> int:
+    def right_fan_max(self) -> int:
         return int(self._attributes["FANLMINMAX"][5])
 
     @property
     def door_status(self) -> int:
-        return int(self._attributes["DOOR"])
+        return int(self._attributes.get("DOOR", 0))
 
     @property
     def light_status(self) -> int:
-        return int(self._attributes["LIGHT"])
+        return int(self._attributes.get("LIGHT", 0))
 
     @property
     def status(self) -> int:
-        return int(self._attributes["LSTATUS"])
+        return int(self._attributes.get("LSTATUS", 0))
 
     @property
     def mac(self) -> str:
-        return str(self._properties["MAC"])
+        return str(self._properties.get("MAC", "X"))
 
     @property
     def name(self) -> str:
-        return str(self._properties["LABEL"])
+        return str(self._properties.get("LABEL", "X"))
 
     @property
     def pellet_quantity(self) -> int:
-        return int(self._attributes["PQT"])
+        return int(self._attributes.get("PQT", 0))
 
     @property
     def is_on(self) -> bool:
@@ -330,11 +328,11 @@ class _PalazzettiState:
 
     @property
     def sw_version(self) -> str:
-        return str(self._properties["plzbridge"])
+        return str(self._properties.get("plzbridge", "X"))
 
     @property
     def hw_version(self) -> str:
-        return str(self._properties["SYSTEM"])
+        return str(self._properties.get("SYSTEM", "X"))
 
     def list_temperatures(self) -> list[TemperatureDefinition]:
         """Return a list of temperature sensor definitions"""

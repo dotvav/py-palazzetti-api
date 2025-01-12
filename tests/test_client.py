@@ -81,6 +81,8 @@ async def mock_ready_client(device: str = "palazzetti_ginger", variant: str = No
     ):
         assert await client.update_state()
 
+    return client
+
 
 async def test_connect():
     """Test the connect function."""
@@ -222,3 +224,4 @@ async def test_snapshot(device, snapshot):
     client = await mock_ready_client(device=device)
 
     assert client == snapshot
+    assert client._state == snapshot
