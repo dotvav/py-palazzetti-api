@@ -6,7 +6,7 @@
         "label": "Code Coverage",
         "detail": "Generate code coverage report for a given integration.",
         "type": "shell",
-        "command": "pytest ./tests/ --cov --cov-report term-missing",
+        "command": "pytest ./tests/ --cov --cov-branch --cov-report term-missing",
         "dependsOn": ["Compile English translations"],
         "group": {
           "kind": "test",
