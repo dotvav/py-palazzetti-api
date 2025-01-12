@@ -37,23 +37,49 @@ class MockResponse:
 
 
 @pytest.fixture
-def mock_stdt_response_ok():
-    return MockResponse(status=200, text=stdt_response())
+def mock_stdt_response_ok(device: str = "palazzetti_ginger"):
+    return MockResponse(status=200, text=stdt_response(device=device))
 
 
 @pytest.fixture
-def mock_alls_response_ok():
-    return MockResponse(status=200, text=alls_response())
+def mock_alls_response_ok(device: str = "palazzetti_ginger"):
+    return MockResponse(status=200, text=alls_response(device=device))
 
 
 @pytest.fixture
-def mock_alls_smaller_pqt():
-    return MockResponse(status=200, text=alls_response(variant="smaller_PQT"))
+def mock_alls_smaller_pqt(device: str = "palazzetti_ginger", variant: str = None):
+    return MockResponse(
+        status=200, text=alls_response(device=device, variant="smaller_PQT")
+    )
 
 
 @pytest.fixture
-def mock_alls_larger_pqt():
-    return MockResponse(status=200, text=alls_response(variant="larger_PQT"))
+def mock_alls_larger_pqt(device: str = "palazzetti_ginger", variant: str = None):
+    return MockResponse(
+        status=200, text=alls_response(device=device, variant="larger_PQT")
+    )
+
+
+async def mock_ready_client(device: str = "palazzetti_ginger", variant: str = None):
+    client = PalazzettiClient("127.0.0.1")
+
+    # Connect and set properties
+    with (
+        patch(
+            "aiohttp.ClientSession.get",
+            return_value=MockResponse(status=200, text=stdt_response(device=device)),
+        ),
+    ):
+        assert await client.connect()
+
+    # Set state attributes
+    with (
+        patch(
+            "aiohttp.ClientSession.get",
+            return_value=MockResponse(status=200, text=alls_response(device=device)),
+        ),
+    ):
+        assert await client.update_state()
 
 
 async def test_connect():
@@ -78,7 +104,6 @@ async def test_execute_command(mock_stdt_response_ok):
     ):
         success = await client._execute_command(command="GET STDT")
 
-    # assert len(session.mock_calls) == 1
     assert len(get.mock_calls) == 1
     assert success
 
@@ -180,3 +205,20 @@ async def test_pellet_quantity_sanitize(
     ):
         assert await client.update_state()
     assert client.pellet_quantity == 2000
+
+
+@pytest.mark.parametrize(
+    "device",
+    [
+        "jotul_pf911s",
+        "palazzetti_beatrice",
+        "palazzetti_emily",
+        "palazzetti_ginger",
+        "palazzetti_juliepro2",
+    ],
+)
+async def test_snapshot(device, snapshot):
+    """Perform snapshot tests"""
+    client = await mock_ready_client(device=device)
+
+    assert client == snapshot

@@ -156,7 +156,9 @@ class _PalazzettiState:
 
     @property
     def pellet_level(self) -> float:
-        return float(self._attributes["PLEVEL"])
+        if "PLEVEL" in self._attributes:
+            return float(self._attributes["PLEVEL"])
+        return None
 
     @property
     def has_wood_combustion_temperature(self) -> bool:

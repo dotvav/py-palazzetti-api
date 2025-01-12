@@ -1,5 +1,5 @@
 # Python Palazzetti API
-An async Python library to access and control a Palazzetti stove through a Palazzetti Connection Box.
+An async Python library to access and control a Palazzetti stove through a Palazzetti Connection Box or a [WPAlaControl](https://github.com/Domochip/WPalaControl).
 
 ## Getting started
 ```python
