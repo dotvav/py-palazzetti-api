@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.19
+* Rename fans LEFT and RIGHT instead of SECOND and THIRD
+* Create syrupy snapshot tests
+
 ## 0.1.18
 * Bugfix: missing current_fan_speed function
 
