@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.20
+* Fix a bug where a parameter 0 is treated as no parameter. For example, it was not possible to set the fan speed to 0.
+
+
 ## 0.1.19
 * Rename fans LEFT and RIGHT instead of SECOND and THIRD
 * Create syrupy snapshot tests
