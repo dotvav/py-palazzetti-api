@@ -395,7 +395,9 @@ class PalazzettiClient:
     ) -> _PalazzettiAPIData:
         request_url = API_COMMAND_URL_TEMPLATE.format(
             host=self._hostname,
-            command_and_parameter=f"{command} {parameter}" if parameter else command,
+            command_and_parameter=f"{command} {parameter}"
+            if parameter is not None
+            else command,
         )
 
         try:

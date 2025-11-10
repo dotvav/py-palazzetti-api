@@ -6,7 +6,7 @@
         "label": "Code Coverage",
         "detail": "Generate code coverage report for a given integration.",
         "type": "shell",
-        "command": "pytest ./tests/ --cov --cov-branch --cov-report term-missing",
+        "command": "${command:python.interpreterPath} -m pytest ./tests/ --cov --cov-branch --cov-report term-missing",
         "dependsOn": ["Compile English translations"],
         "group": {
           "kind": "test",
@@ -22,7 +22,7 @@
         "label": "Update syrupy snapshots",
         "detail": "Update syrupy snapshots for a given integration.",
         "type": "shell",
-        "command": "pytest ./tests/ --snapshot-update",
+        "command": "${command:python.interpreterPath} -m pytest ./tests/ --snapshot-update",
         "group": {
           "kind": "test",
           "isDefault": true
@@ -36,7 +36,7 @@
       {
         "label": "Install all Requirements",
         "type": "shell",
-        "command": "pip install -r requirements.txt",
+        "command": "${command:python.interpreterPath} -m pip install -r requirements.txt",
         "group": {
           "kind": "build",
           "isDefault": true
@@ -50,7 +50,7 @@
       {
         "label": "Install all Test Requirements",
         "type": "shell",
-        "command": "pip install -r requirements-test.txt",
+        "command": "${command:python.interpreterPath} -m pip install -r requirements-test.txt",
         "group": {
           "kind": "build",
           "isDefault": true

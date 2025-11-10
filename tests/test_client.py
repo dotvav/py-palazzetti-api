@@ -145,6 +145,26 @@ async def test_state_ginger(mock_stdt_response_ok, mock_alls_response_ok):
     assert temperatures[TemperatureDescriptionKey.WOOD_COMBUSTION_TEMP] == 45
 
 
+async def test_set_fan_speed(mock_stdt_response_ok, mock_alls_response_ok):
+    """Test the functions that return the state."""
+    client = PalazzettiClient("127.0.0.1")
+
+    # Connect and set properties
+    with (
+        patch("aiohttp.ClientSession.get", return_value=mock_stdt_response_ok),
+    ):
+        assert await client.connect()
+
+    # Set state attributes
+    with (
+        patch("aiohttp.ClientSession.get", return_value=mock_alls_response_ok) as get,
+    ):
+        assert await client.update_state()
+        assert await client.set_fan_speed(0)
+
+    assert get.mock_calls[-1].args[0].split("=")[-1] == "SET RFAN 0"
+
+
 async def test_pellet_quantity_not_sanitize(
     mock_alls_response_ok,
     mock_alls_smaller_pqt,
@@ -213,6 +233,7 @@ async def test_pellet_quantity_sanitize(
     "device",
     [
         "jotul_pf911s",
+        "palazzetti_aurora",
         "palazzetti_beatrice",
         "palazzetti_emily",
         "palazzetti_ginger",
