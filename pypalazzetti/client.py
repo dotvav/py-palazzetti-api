@@ -1,5 +1,6 @@
 """Python wrapper for the Palazzetti Connection Box API."""
 
+import asyncio
 import json
 from json.decoder import JSONDecodeError
 
@@ -10,12 +11,12 @@ from .const import (
     API_COMMAND_URL_TEMPLATE,
     COMMAND_CHECK_ONLINE,
     COMMAND_SET_FAN_SILENT,
-    COMMAND_SET_MAIN_FAN_SPEED,
     COMMAND_SET_LEFT_FAN_SPEED,
-    COMMAND_SET_RIGHT_FAN_SPEED,
+    COMMAND_SET_MAIN_FAN_SPEED,
     COMMAND_SET_OFF,
     COMMAND_SET_ON,
     COMMAND_SET_POWER_MODE,
+    COMMAND_SET_RIGHT_FAN_SPEED,
     COMMAND_SET_TEMPERATURE,
     COMMAND_UPDATE_PROPERTIES,
     COMMAND_UPDATE_STATE,
@@ -36,12 +37,14 @@ class PalazzettiClient:
         self,
         hostname: str,
         session: aiohttp.ClientSession | None = None,
-        config: PalazzettiClientConfig = PalazzettiClientConfig(),
+        config: PalazzettiClientConfig | None = None,
     ):
         self._hostname = hostname
         self._session = session or aiohttp.ClientSession()
-        self._config = config
-        self._state = _PalazzettiState(config)
+        self._config = config or PalazzettiClientConfig()
+        self._state = _PalazzettiState(self._config)
+        self._has_properties = False
+        self._lock = asyncio.Lock()
 
     async def connect(self) -> bool:
         """Connect to the device."""
@@ -51,6 +54,7 @@ class PalazzettiClient:
         )
         if r.success:
             self._state.merge_properties(r)
+            self._has_properties = True
             self.connected = True
         else:
             self.connected = False
@@ -58,20 +62,19 @@ class PalazzettiClient:
 
     async def is_online(self) -> bool:
         """Test if the device is online."""
-        if not self.connected:
+        if not self._has_properties:
             await self.connect()
         return (await self._execute_command(command=COMMAND_CHECK_ONLINE)).success
 
     async def update_state(self) -> bool:
         """Update the device's state."""
         # Connect if not connected yet
-        if not self.connected:
-            await self.connect()
+        if not self._has_properties and not await self.connect():
+            return False
         # Check if connection was successful before updating
-        if self.connected:
-            self.connected = (
-                await self._execute_command(command=COMMAND_UPDATE_STATE)
-            ).success
+        self.connected = (
+            await self._execute_command(command=COMMAND_UPDATE_STATE)
+        ).success
         return self.connected
 
     @property
@@ -391,7 +394,7 @@ class PalazzettiClient:
         self,
         command: str,
         parameter: str | int | None = None,
-        merge_state=True,
+        merge_state: bool = True,
     ) -> _PalazzettiAPIData:
         request_url = API_COMMAND_URL_TEMPLATE.format(
             host=self._hostname,
@@ -400,19 +403,25 @@ class PalazzettiClient:
             else command,
         )
 
-        try:
-            async with self._session.get(request_url) as response:
-                payload = _PalazzettiAPIData(await response.text())
-        except (TypeError, JSONDecodeError) as ex:
-            self.connected = False
-            raise CommunicationError("Invalid API response") from ex
-        except aiohttp.ClientError as ex:
-            self.connected = False
-            raise CommunicationError("API communication error") from ex
+        timeout = aiohttp.ClientTimeout(total=self._config.request_timeout)
 
-        if merge_state:
-            self._state.merge_state(payload)
-        return payload
+        async with self._lock:
+            try:
+                async with self._session.get(request_url, timeout=timeout) as response:
+                    payload = _PalazzettiAPIData(await response.text())
+            except TimeoutError as ex:
+                self.connected = False
+                raise CommunicationError(f"API request timed out: {ex}") from ex
+            except (TypeError, JSONDecodeError) as ex:
+                self.connected = False
+                raise CommunicationError("Invalid API response") from ex
+            except aiohttp.ClientError as ex:
+                self.connected = False
+                raise CommunicationError("API communication error") from ex
+
+            if merge_state:
+                self._state.merge_state(payload)
+            return payload
 
     def to_json(self, redact: bool = False) -> str:
         """Return a snapshot of the client as a json string."""
