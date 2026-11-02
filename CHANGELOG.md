@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.21
+* Add configurable HTTP request timeout (`request_timeout`, default 10.0s) and catch `TimeoutError`
+* Do not re-fetch static properties (`GET STDT`) on transient polling failures
+* Serialize CBOX API commands using an `asyncio.Lock`
+
 ## 0.1.20
 * Fix a bug where a parameter 0 is treated as no parameter. For example, it was not possible to set the fan speed to 0.
 

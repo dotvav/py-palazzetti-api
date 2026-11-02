@@ -2,7 +2,6 @@
 
 from typing import Final
 
-
 API_COMMAND_URL_TEMPLATE: Final = (
     "http://{host}/cgi-bin/sendmsg.lua?cmd={command_and_parameter}"
 )

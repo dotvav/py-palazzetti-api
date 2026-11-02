@@ -31,6 +31,5 @@ async def main():
     print(client.to_json())
 
 
-
 asyncio.new_event_loop().run_until_complete(main())
 ```
