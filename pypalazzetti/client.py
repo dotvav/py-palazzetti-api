@@ -411,7 +411,9 @@ class PalazzettiClient:
                     payload = _PalazzettiAPIData(await response.text())
             except TimeoutError as ex:
                 self.connected = False
-                raise CommunicationError(f"API request timed out: {ex}") from ex
+                raise CommunicationError(
+                    f"API request timed out after {self._config.request_timeout}s"
+                ) from ex
             except (TypeError, JSONDecodeError) as ex:
                 self.connected = False
                 raise CommunicationError("Invalid API response") from ex

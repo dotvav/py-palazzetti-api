@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.22
+* Increase default HTTP `request_timeout` from 10.0s to 25.0s to accommodate slow CBOX serial responses
+* Improve timeout error message to include the configured timeout duration
+
 ## 0.1.21
 * Add configurable HTTP request timeout (`request_timeout`, default 10.0s) and catch `TimeoutError`
 * Do not re-fetch static properties (`GET STDT`) on transient polling failures
