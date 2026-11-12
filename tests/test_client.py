@@ -261,7 +261,7 @@ async def test_timeout_raises_communication_error():
 
     with (
         patch("aiohttp.ClientSession.get", side_effect=TimeoutError("Request timeout")),
-        pytest.raises(CommunicationError, match="API request timed out"),
+        pytest.raises(CommunicationError, match=r"API request timed out after 25\.0s"),
     ):
         await client.connect()
 
@@ -269,7 +269,7 @@ async def test_timeout_raises_communication_error():
 
     with (
         patch("aiohttp.ClientSession.get", side_effect=TimeoutError("Async timeout")),
-        pytest.raises(CommunicationError, match="API request timed out"),
+        pytest.raises(CommunicationError, match=r"API request timed out after 25\.0s"),
     ):
         await client.update_state()
 
@@ -344,6 +344,12 @@ async def test_command_serialization_lock():
         await asyncio.gather(t1, t2)
 
     assert execution_order == ["cmd1", "cmd2"]
+
+
+def test_default_request_timeout():
+    """Test default request timeout value in config."""
+    config = PalazzettiClientConfig()
+    assert config.request_timeout == 25.0
 
 
 async def test_custom_request_timeout(mock_stdt_response_ok):
