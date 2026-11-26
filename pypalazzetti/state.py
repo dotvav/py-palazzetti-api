@@ -421,10 +421,22 @@ class _PalazzettiState:
     def to_dict(
         self,
         *,
-        legacy_format: bool = True,
+        legacy_format: bool = False,
+        legacy: bool | None = None,
     ) -> dict[str, dict[str, Any]]:
-        """Return a snapshot of the state."""
-        if legacy_format:
+        """Return a snapshot of the state.
+
+        Default format is modern ('device_info' and 'telemetry').
+        Passing legacy=True or legacy_format=True returns the legacy format
+        ('properties' and 'attributes') for backward compatibility.
+        """
+        is_legacy = legacy if legacy is not None else legacy_format
+        if is_legacy:
+            warnings.warn(
+                "legacy / legacy_format is deprecated and will be removed in a future release.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             return {
                 "properties": self._device_info.copy(),
                 "attributes": self._telemetry.copy(),

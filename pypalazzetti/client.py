@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import warnings
 from json.decoder import JSONDecodeError
 from typing import Any
 
@@ -499,25 +500,41 @@ class PalazzettiClient:
         self,
         redact: bool = False,
         *,
-        legacy_format: bool = True,
+        legacy_format: bool = False,
+        legacy: bool | None = None,
     ) -> str:
         """Return a snapshot of the client as a json string."""
-        return json.dumps(self.to_dict(redact=redact, legacy_format=legacy_format))
+        return json.dumps(
+            self.to_dict(redact=redact, legacy_format=legacy_format, legacy=legacy)
+        )
 
     def to_dict(
         self,
         redact: bool = False,
         *,
-        legacy_format: bool = True,
+        legacy_format: bool = False,
+        legacy: bool | None = None,
     ) -> dict[str, Any]:
-        """Return a snapshot of the client as a dict."""
-        info_key = "properties" if legacy_format else "device_info"
-        telemetry_key = "attributes" if legacy_format else "telemetry"
+        """Return a snapshot of the client as a dict.
+
+        Default format is modern ('device_info' and 'telemetry').
+        Passing legacy=True or legacy_format=True returns the legacy format
+        ('properties' and 'attributes') for backward compatibility.
+        """
+        is_legacy = legacy if legacy is not None else legacy_format
+        if is_legacy:
+            warnings.warn(
+                "legacy / legacy_format is deprecated and will be removed in a future release.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        info_key = "properties" if is_legacy else "device_info"
+        telemetry_key = "attributes" if is_legacy else "telemetry"
 
         data: dict[str, Any] = {
             "host": self._hostname,
             "connected": self.connected,
-            "state": self._state.to_dict(legacy_format=legacy_format),
+            "state": self._state.to_dict(legacy_format=is_legacy, legacy=legacy),
         }
 
         if redact:

@@ -527,36 +527,63 @@ async def test_light_status_parsing():
 
 
 async def test_to_dict_and_to_json_formats():
-    """Test to_dict and to_json with legacy and modern formats."""
+    """Test to_dict and to_json with default modern and backward-compatible legacy formats."""
     client = await mock_ready_client()
 
-    # Legacy format (default)
-    data_legacy = client.to_dict()
+    # Modern format (default in 0.2.0)
+    data_default = client.to_dict()
+    assert "device_info" in data_default["state"]
+    assert "telemetry" in data_default["state"]
+    assert "properties" not in data_default["state"]
+    assert "attributes" not in data_default["state"]
+
+    json_default = client.to_json()
+    assert '"device_info":' in json_default
+    assert '"telemetry":' in json_default
+    assert '"properties":' not in json_default
+    assert '"attributes":' not in json_default
+
+    # Backward-compatible legacy format with legacy=True
+    with pytest.deprecated_call():
+        data_legacy_kw = client.to_dict(legacy=True)
+    assert "properties" in data_legacy_kw["state"]
+    assert "attributes" in data_legacy_kw["state"]
+    assert "device_info" not in data_legacy_kw["state"]
+    assert "telemetry" not in data_legacy_kw["state"]
+
+    with pytest.deprecated_call():
+        json_legacy_kw = client.to_json(legacy=True)
+    assert '"properties":' in json_legacy_kw
+    assert '"attributes":' in json_legacy_kw
+
+    # Backward-compatible legacy format with legacy_format=True
+    with pytest.deprecated_call():
+        data_legacy = client.to_dict(legacy_format=True)
     assert "properties" in data_legacy["state"]
     assert "attributes" in data_legacy["state"]
     assert "device_info" not in data_legacy["state"]
     assert "telemetry" not in data_legacy["state"]
 
-    json_legacy = client.to_json()
+    with pytest.deprecated_call():
+        json_legacy = client.to_json(legacy_format=True)
     assert '"properties":' in json_legacy
     assert '"attributes":' in json_legacy
 
-    # Modern format
-    data_modern = client.to_dict(legacy_format=False)
-    assert "device_info" in data_modern["state"]
-    assert "telemetry" in data_modern["state"]
-    assert "properties" not in data_modern["state"]
-    assert "attributes" not in data_modern["state"]
+    # Explicit legacy_format=False / legacy=False
+    data_modern_explicit = client.to_dict(legacy_format=False)
+    assert "device_info" in data_modern_explicit["state"]
+    assert "telemetry" in data_modern_explicit["state"]
 
-    json_modern = client.to_json(legacy_format=False)
-    assert '"device_info":' in json_modern
-    assert '"telemetry":' in json_modern
+    data_legacy_false = client.to_dict(legacy=False)
+    assert "device_info" in data_legacy_false["state"]
+    assert "telemetry" in data_legacy_false["state"]
 
     # Redaction with both formats
-    redacted_legacy = client.to_dict(redact=True, legacy_format=True)
+    with pytest.deprecated_call():
+        redacted_legacy = client.to_dict(redact=True, legacy=True)
     assert redacted_legacy["state"]["properties"]["MAC"] == "XXXXXXXX"
 
-    redacted_modern = client.to_dict(redact=True, legacy_format=False)
+    redacted_modern = client.to_dict(redact=True)
     assert redacted_modern["state"]["device_info"]["MAC"] == "XXXXXXXX"
 
 

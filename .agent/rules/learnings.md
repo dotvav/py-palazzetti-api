@@ -42,3 +42,16 @@ async def update_state(self) -> bool:
 - **The Solution**:
   1. Use keyword-only arguments (`*, legacy_format: bool = True`) in `to_dict()` and `to_json()` to maintain legacy key structure by default while allowing callers to opt into modern semantic keys without memory duplication.
   2. Provide `@property` aliases for private attributes and method aliases emitting `DeprecationWarning` with `stacklevel=2`.
+
+
+## Two-Stage SemVer Migration: Inverting Defaults while Preserving Dual-Keyword Deprecation Flags
+- **Last Updated**: `2026-11-26T15:28:00Z`
+- **The Issue**: Transitioning API serialization outputs from deprecated legacy keys (`properties`/`attributes`) to modern semantic keys (`device_info`/`telemetry`) in a minor version bump (v0.2.0) without breaking downstream consumers (like Home Assistant Core diagnostics snapshots) during multi-repository staged rollouts.
+- **The Gotcha**:
+  1. Downstream consumers bumping dependencies in initial PRs cannot immediately refactor all their internal diagnostic tests and snapshots in the same commit.
+  2. Callers frequently confuse or shorten migration argument names (e.g., calling `legacy=True` instead of `legacy_format=True`). If only one keyword name is supported, downstream code breaks with `TypeError: unexpected keyword argument`.
+- **The Solution**:
+  1. Invert the default: default `legacy_format=False` and `legacy=None` so new callers get semantic keys automatically.
+  2. Implement dual-keyword resolution: `is_legacy = legacy if legacy is not None else legacy_format`.
+  3. Emit a `DeprecationWarning` with `stacklevel=2` only when `is_legacy` is True, and verify using `pytest.deprecated_call()`.
+
