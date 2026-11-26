@@ -30,3 +30,15 @@ async def update_state(self) -> bool:
 - **The Solution**:
   1. Set the default `request_timeout` to at least 25.0s, which accommodates the 18s upper-bound serial latency while remaining well below Home Assistant's 60s coordinator polling interval.
   2. Format the exception explicitly: `f"API request timed out after {self._config.request_timeout}s"`.
+
+
+## Deprecating Internal IoT State Models with Keyword-Only API Migration
+- **Last Updated**: `2026-11-26T12:53:30Z`
+- **The Issue**: Refactoring internal state containers (e.g. renaming `properties`/`attributes` to semantic `device_info`/`telemetry`) risks breaking diagnostic serialization (`to_dict()`) and downstream consumers like Home Assistant coordinators, while duplicating dictionary keys in serialization outputs doubles memory allocation.
+- **The Gotcha**:
+  1. Passing boolean flags positionally (`client.to_dict(False, True)`) creates unreadable client code and fragile signatures.
+  2. Typing IoT dictionary payloads strictly as `dict[str, str | int | float]` causes static type checking (`mypy`) failures when raw microcontroller responses contain arrays (e.g., `FANLMINMAX: [0, 5, 0, 1, 0, 1]`, `DNS: [...]`).
+  3. Syrupy snapshot tests serialize public object attributes dynamically; private property aliases (`@property def _properties(self)`) maintain complete backward compatibility without polluting snapshot outputs.
+- **The Solution**:
+  1. Use keyword-only arguments (`*, legacy_format: bool = True`) in `to_dict()` and `to_json()` to maintain legacy key structure by default while allowing callers to opt into modern semantic keys without memory duplication.
+  2. Provide `@property` aliases for private attributes and method aliases emitting `DeprecationWarning` with `stacklevel=2`.

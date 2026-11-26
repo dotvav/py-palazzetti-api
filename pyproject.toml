@@ -1,2 +1,5 @@
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[tool.mypy]
+ignore_missing_imports = true

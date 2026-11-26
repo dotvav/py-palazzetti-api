@@ -3,6 +3,7 @@
 import asyncio
 import json
 from json.decoder import JSONDecodeError
+from typing import Any
 
 import aiohttp
 
@@ -10,6 +11,8 @@ from .config import PalazzettiClientConfig
 from .const import (
     API_COMMAND_URL_TEMPLATE,
     COMMAND_CHECK_ONLINE,
+    COMMAND_GET_DEVICE_INFO,
+    COMMAND_GET_TELEMETRY,
     COMMAND_SET_DOOR,
     COMMAND_SET_FAN_SILENT,
     COMMAND_SET_LEFT_FAN_SPEED,
@@ -20,8 +23,6 @@ from .const import (
     COMMAND_SET_POWER_MODE,
     COMMAND_SET_RIGHT_FAN_SPEED,
     COMMAND_SET_TEMPERATURE,
-    COMMAND_UPDATE_PROPERTIES,
-    COMMAND_UPDATE_STATE,
     REDACTED_DATA,
 )
 from .exceptions import CommunicationError, ValidationError
@@ -31,7 +32,7 @@ from .temperature import TemperatureDefinition
 
 
 class PalazzettiClient:
-    """Interface class for the Overkiz API."""
+    """Interface class for the Palazzetti Connection Box API."""
 
     connected = False
 
@@ -45,18 +46,27 @@ class PalazzettiClient:
         self._session = session or aiohttp.ClientSession()
         self._config = config or PalazzettiClientConfig()
         self._state = _PalazzettiState(self._config)
-        self._has_properties = False
+        self._has_device_info = False
         self._lock = asyncio.Lock()
+
+    @property
+    def _has_properties(self) -> bool:
+        """DEPRECATED - Use _has_device_info instead."""
+        return self._has_device_info
+
+    @_has_properties.setter
+    def _has_properties(self, value: bool) -> None:
+        self._has_device_info = value
 
     async def connect(self) -> bool:
         """Connect to the device."""
         r = await self._execute_command(
-            command=COMMAND_UPDATE_PROPERTIES,
+            command=COMMAND_GET_DEVICE_INFO,
             merge_state=False,
         )
         if r.success:
-            self._state.merge_properties(r)
-            self._has_properties = True
+            self._state.merge_device_info(r)
+            self._has_device_info = True
             self.connected = True
         else:
             self.connected = False
@@ -64,20 +74,24 @@ class PalazzettiClient:
 
     async def is_online(self) -> bool:
         """Test if the device is online."""
-        if not self._has_properties:
+        if not self._has_device_info:
             await self.connect()
         return (await self._execute_command(command=COMMAND_CHECK_ONLINE)).success
 
     async def update_state(self) -> bool:
         """Update the device's state."""
         # Connect if not connected yet
-        if not self._has_properties and not await self.connect():
+        if not self._has_device_info and not await self.connect():
             return False
         # Check if connection was successful before updating
         self.connected = (
-            await self._execute_command(command=COMMAND_UPDATE_STATE)
+            await self._execute_command(command=COMMAND_GET_TELEMETRY)
         ).success
         return self.connected
+
+    async def update_telemetry(self) -> bool:
+        """Update the device's telemetry."""
+        return await self.update_state()
 
     @property
     def sw_version(self) -> str:
@@ -352,7 +366,7 @@ class PalazzettiClient:
                 command=COMMAND_SET_TEMPERATURE,
                 parameter=temperature,
             )
-            return self._state.merge_state(res)
+            return self._state.merge_telemetry(res)
         return False
 
     async def set_fan_silent(self) -> bool:
@@ -478,22 +492,32 @@ class PalazzettiClient:
                 raise CommunicationError("API communication error") from ex
 
             if merge_state:
-                self._state.merge_state(payload)
+                self._state.merge_telemetry(payload)
             return payload
 
-    def to_json(self, redact: bool = False) -> str:
+    def to_json(
+        self,
+        redact: bool = False,
+        *,
+        legacy_format: bool = True,
+    ) -> str:
         """Return a snapshot of the client as a json string."""
-        return json.dumps(self.to_dict(redact))
+        return json.dumps(self.to_dict(redact=redact, legacy_format=legacy_format))
 
     def to_dict(
         self,
         redact: bool = False,
-    ) -> dict[str, bool | dict[str, str | bool | int | float | list[int | str]]]:
+        *,
+        legacy_format: bool = True,
+    ) -> dict[str, Any]:
         """Return a snapshot of the client as a dict."""
-        data = {
+        info_key = "properties" if legacy_format else "device_info"
+        telemetry_key = "attributes" if legacy_format else "telemetry"
+
+        data: dict[str, Any] = {
             "host": self._hostname,
             "connected": self.connected,
-            "state": self._state.to_dict(),
+            "state": self._state.to_dict(legacy_format=legacy_format),
         }
 
         if redact:
@@ -512,7 +536,7 @@ class PalazzettiClient:
                 "WSSID": REDACTED_DATA,
             }
             data["host"] = REDACTED_DATA
-            data["state"]["properties"] = data["state"]["properties"] | redacted
-            data["state"]["attributes"] = data["state"]["attributes"] | redacted
+            data["state"][info_key] = data["state"][info_key] | redacted
+            data["state"][telemetry_key] = data["state"][telemetry_key] | redacted
 
         return data
