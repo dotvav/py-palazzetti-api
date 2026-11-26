@@ -45,13 +45,23 @@ async def update_state(self) -> bool:
 
 
 ## Two-Stage SemVer Migration: Inverting Defaults while Preserving Dual-Keyword Deprecation Flags
-- **Last Updated**: `2026-11-26T15:28:00Z`
+- **Last Updated**: `2026-11-26T15:42:00Z`
 - **The Issue**: Transitioning API serialization outputs from deprecated legacy keys (`properties`/`attributes`) to modern semantic keys (`device_info`/`telemetry`) in a minor version bump (v0.2.0) without breaking downstream consumers (like Home Assistant Core diagnostics snapshots) during multi-repository staged rollouts.
 - **The Gotcha**:
   1. Downstream consumers bumping dependencies in initial PRs cannot immediately refactor all their internal diagnostic tests and snapshots in the same commit.
   2. Callers frequently confuse or shorten migration argument names (e.g., calling `legacy=True` instead of `legacy_format=True`). If only one keyword name is supported, downstream code breaks with `TypeError: unexpected keyword argument`.
+  3. Propagating `is_legacy` through nested helper calls (`client.to_dict` calling `state.to_dict` or `to_json` calling `to_dict`) causes duplicate `DeprecationWarning` emissions and corrupts `stacklevel=2`, making warnings point to internal library frames rather than downstream user code.
+  4. Silent precedence (e.g. `legacy=False, legacy_format=True`) can cause subtle bugs unless contradictory combinations are explicitly rejected.
 - **The Solution**:
   1. Invert the default: default `legacy_format=False` and `legacy=None` so new callers get semantic keys automatically.
-  2. Implement dual-keyword resolution: `is_legacy = legacy if legacy is not None else legacy_format`.
-  3. Emit a `DeprecationWarning` with `stacklevel=2` only when `is_legacy` is True, and verify using `pytest.deprecated_call()`.
+  2. Implement dual-keyword resolution with contradiction check:
+     ```python
+     if legacy is not None and legacy != legacy_format:
+         raise ValueError(
+             "Conflicting arguments: 'legacy' and 'legacy_format' cannot have different values."
+         )
+     is_legacy = bool(legacy if legacy is not None else legacy_format)
+     ```
+  3. Separate public entry points (`to_dict`, `to_json`) that emit a single `DeprecationWarning` at `stacklevel=2` from private data extraction helpers (`_to_dict_data`) that never emit warnings.
+  4. Verify with `warnings.catch_warnings(record=True)` asserting `len(recorded) == 1`, `recorded[0].filename == __file__`, and 0 warnings on modern calls.
 

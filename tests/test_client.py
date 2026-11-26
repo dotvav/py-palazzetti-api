@@ -528,63 +528,115 @@ async def test_light_status_parsing():
 
 async def test_to_dict_and_to_json_formats():
     """Test to_dict and to_json with default modern and backward-compatible legacy formats."""
+    import warnings
+
     client = await mock_ready_client()
 
-    # Modern format (default in 0.2.0)
-    data_default = client.to_dict()
+    # Modern format (default in 0.2.0) emits ZERO warnings
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
+        data_default = client.to_dict()
+        json_default = client.to_json()
+    assert len(recorded) == 0
+
     assert "device_info" in data_default["state"]
     assert "telemetry" in data_default["state"]
     assert "properties" not in data_default["state"]
     assert "attributes" not in data_default["state"]
 
-    json_default = client.to_json()
     assert '"device_info":' in json_default
     assert '"telemetry":' in json_default
     assert '"properties":' not in json_default
     assert '"attributes":' not in json_default
 
-    # Backward-compatible legacy format with legacy=True
-    with pytest.deprecated_call():
+    # Backward-compatible legacy format with legacy=True emits exactly 1 warning pointing to caller
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
         data_legacy_kw = client.to_dict(legacy=True)
+    assert len(recorded) == 1
+    assert issubclass(recorded[0].category, DeprecationWarning)
+    assert recorded[0].filename == __file__
+
     assert "properties" in data_legacy_kw["state"]
     assert "attributes" in data_legacy_kw["state"]
     assert "device_info" not in data_legacy_kw["state"]
     assert "telemetry" not in data_legacy_kw["state"]
 
-    with pytest.deprecated_call():
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
         json_legacy_kw = client.to_json(legacy=True)
+    assert len(recorded) == 1
+    assert issubclass(recorded[0].category, DeprecationWarning)
+    assert recorded[0].filename == __file__
+
     assert '"properties":' in json_legacy_kw
     assert '"attributes":' in json_legacy_kw
 
-    # Backward-compatible legacy format with legacy_format=True
-    with pytest.deprecated_call():
+    # Backward-compatible legacy format with legacy_format=True emits exactly 1 warning
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
         data_legacy = client.to_dict(legacy_format=True)
+    assert len(recorded) == 1
+    assert issubclass(recorded[0].category, DeprecationWarning)
+    assert recorded[0].filename == __file__
+
     assert "properties" in data_legacy["state"]
     assert "attributes" in data_legacy["state"]
-    assert "device_info" not in data_legacy["state"]
-    assert "telemetry" not in data_legacy["state"]
 
-    with pytest.deprecated_call():
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
         json_legacy = client.to_json(legacy_format=True)
+    assert len(recorded) == 1
+    assert issubclass(recorded[0].category, DeprecationWarning)
+    assert recorded[0].filename == __file__
+
     assert '"properties":' in json_legacy
     assert '"attributes":' in json_legacy
 
-    # Explicit legacy_format=False / legacy=False
-    data_modern_explicit = client.to_dict(legacy_format=False)
+    # Explicit legacy_format=False / legacy=False emit ZERO warnings
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
+        data_modern_explicit = client.to_dict(legacy_format=False)
+        data_legacy_false = client.to_dict(legacy=False)
+        json_modern_explicit = client.to_json(legacy_format=False)
+        json_legacy_false = client.to_json(legacy=False)
+    assert len(recorded) == 0
+
     assert "device_info" in data_modern_explicit["state"]
     assert "telemetry" in data_modern_explicit["state"]
-
-    data_legacy_false = client.to_dict(legacy=False)
     assert "device_info" in data_legacy_false["state"]
     assert "telemetry" in data_legacy_false["state"]
+    assert '"device_info":' in json_modern_explicit
+    assert '"device_info":' in json_legacy_false
 
-    # Redaction with both formats
-    with pytest.deprecated_call():
+    # Conflicting arguments raise ValueError
+    with pytest.raises(ValueError, match="Conflicting arguments"):
+        client.to_dict(legacy=True, legacy_format=False)
+    with pytest.raises(ValueError, match="Conflicting arguments"):
+        client.to_dict(legacy=False, legacy_format=True)
+    with pytest.raises(ValueError, match="Conflicting arguments"):
+        client.to_json(legacy=True, legacy_format=False)
+    with pytest.raises(ValueError, match="Conflicting arguments"):
+        client.to_json(legacy=False, legacy_format=True)
+    with pytest.raises(ValueError, match="Conflicting arguments"):
+        client._state.to_dict(legacy=True, legacy_format=False)
+
+    # Redaction with modern and legacy formats
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
         redacted_legacy = client.to_dict(redact=True, legacy=True)
+    assert redacted_legacy["host"] == "XXXXXXXX"
     assert redacted_legacy["state"]["properties"]["MAC"] == "XXXXXXXX"
+    assert redacted_legacy["state"]["attributes"]["MAC"] == "XXXXXXXX"
 
     redacted_modern = client.to_dict(redact=True)
+    assert redacted_modern["host"] == "XXXXXXXX"
     assert redacted_modern["state"]["device_info"]["MAC"] == "XXXXXXXX"
+    assert redacted_modern["state"]["telemetry"]["MAC"] == "XXXXXXXX"
+
+    json_redacted = client.to_json(redact=True)
+    assert '"host": "XXXXXXXX"' in json_redacted
+    assert '"MAC": "XXXXXXXX"' in json_redacted
 
 
 async def test_backward_compatibility_deprecated_api():

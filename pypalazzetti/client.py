@@ -496,45 +496,15 @@ class PalazzettiClient:
                 self._state.merge_telemetry(payload)
             return payload
 
-    def to_json(
-        self,
-        redact: bool = False,
-        *,
-        legacy_format: bool = False,
-        legacy: bool | None = None,
-    ) -> str:
-        """Return a snapshot of the client as a json string."""
-        return json.dumps(
-            self.to_dict(redact=redact, legacy_format=legacy_format, legacy=legacy)
-        )
-
-    def to_dict(
-        self,
-        redact: bool = False,
-        *,
-        legacy_format: bool = False,
-        legacy: bool | None = None,
-    ) -> dict[str, Any]:
-        """Return a snapshot of the client as a dict.
-
-        Default format is modern ('device_info' and 'telemetry').
-        Passing legacy=True or legacy_format=True returns the legacy format
-        ('properties' and 'attributes') for backward compatibility.
-        """
-        is_legacy = legacy if legacy is not None else legacy_format
-        if is_legacy:
-            warnings.warn(
-                "legacy / legacy_format is deprecated and will be removed in a future release.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
+    def _to_dict_data(self, redact: bool, is_legacy: bool) -> dict[str, Any]:
+        """Return raw client snapshot dictionary without emitting deprecation warnings."""
         info_key = "properties" if is_legacy else "device_info"
         telemetry_key = "attributes" if is_legacy else "telemetry"
 
         data: dict[str, Any] = {
             "host": self._hostname,
             "connected": self.connected,
-            "state": self._state.to_dict(legacy_format=is_legacy, legacy=legacy),
+            "state": self._state._to_dict_data(is_legacy=is_legacy),
         }
 
         if redact:
@@ -557,3 +527,63 @@ class PalazzettiClient:
             data["state"][telemetry_key] = data["state"][telemetry_key] | redacted
 
         return data
+
+    def to_json(
+        self,
+        redact: bool = False,
+        *,
+        legacy_format: bool | None = None,
+        legacy: bool | None = None,
+    ) -> str:
+        """Return a snapshot of the client as a json string.
+
+        Default format is modern ('device_info' and 'telemetry').
+        Passing legacy=True or legacy_format=True returns the legacy format
+        ('properties' and 'attributes') for backward compatibility.
+        """
+        if legacy is not None and legacy_format is not None and legacy != legacy_format:
+            raise ValueError(
+                "Conflicting arguments: 'legacy' and 'legacy_format' cannot have different values."
+            )
+        is_legacy = bool(
+            legacy
+            if legacy is not None
+            else (legacy_format if legacy_format is not None else False)
+        )
+        if is_legacy:
+            warnings.warn(
+                "legacy / legacy_format is deprecated and will be removed in a future release.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return json.dumps(self._to_dict_data(redact=redact, is_legacy=is_legacy))
+
+    def to_dict(
+        self,
+        redact: bool = False,
+        *,
+        legacy_format: bool | None = None,
+        legacy: bool | None = None,
+    ) -> dict[str, Any]:
+        """Return a snapshot of the client as a dict.
+
+        Default format is modern ('device_info' and 'telemetry').
+        Passing legacy=True or legacy_format=True returns the legacy format
+        ('properties' and 'attributes') for backward compatibility.
+        """
+        if legacy is not None and legacy_format is not None and legacy != legacy_format:
+            raise ValueError(
+                "Conflicting arguments: 'legacy' and 'legacy_format' cannot have different values."
+            )
+        is_legacy = bool(
+            legacy
+            if legacy is not None
+            else (legacy_format if legacy_format is not None else False)
+        )
+        if is_legacy:
+            warnings.warn(
+                "legacy / legacy_format is deprecated and will be removed in a future release.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return self._to_dict_data(redact=redact, is_legacy=is_legacy)

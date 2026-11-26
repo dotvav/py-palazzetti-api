@@ -418,25 +418,9 @@ class _PalazzettiState:
 
         return result
 
-    def to_dict(
-        self,
-        *,
-        legacy_format: bool = False,
-        legacy: bool | None = None,
-    ) -> dict[str, dict[str, Any]]:
-        """Return a snapshot of the state.
-
-        Default format is modern ('device_info' and 'telemetry').
-        Passing legacy=True or legacy_format=True returns the legacy format
-        ('properties' and 'attributes') for backward compatibility.
-        """
-        is_legacy = legacy if legacy is not None else legacy_format
+    def _to_dict_data(self, is_legacy: bool) -> dict[str, dict[str, Any]]:
+        """Return raw state dictionary without emitting deprecation warnings."""
         if is_legacy:
-            warnings.warn(
-                "legacy / legacy_format is deprecated and will be removed in a future release.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
             return {
                 "properties": self._device_info.copy(),
                 "attributes": self._telemetry.copy(),
@@ -445,3 +429,32 @@ class _PalazzettiState:
             "device_info": self._device_info.copy(),
             "telemetry": self._telemetry.copy(),
         }
+
+    def to_dict(
+        self,
+        *,
+        legacy_format: bool | None = None,
+        legacy: bool | None = None,
+    ) -> dict[str, dict[str, Any]]:
+        """Return a snapshot of the state.
+
+        Default format is modern ('device_info' and 'telemetry').
+        Passing legacy=True or legacy_format=True returns the legacy format
+        ('properties' and 'attributes') for backward compatibility.
+        """
+        if legacy is not None and legacy_format is not None and legacy != legacy_format:
+            raise ValueError(
+                "Conflicting arguments: 'legacy' and 'legacy_format' cannot have different values."
+            )
+        is_legacy = bool(
+            legacy
+            if legacy is not None
+            else (legacy_format if legacy_format is not None else False)
+        )
+        if is_legacy:
+            warnings.warn(
+                "legacy / legacy_format is deprecated and will be removed in a future release.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return self._to_dict_data(is_legacy)
