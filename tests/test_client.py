@@ -478,7 +478,7 @@ async def test_door_control():
         assert client.door_status == 0
 
     # Non-zero door status (e.g. moving/open code 2) indicates open
-    client._state.merge_state(
+    client._state.merge_telemetry(
         _PalazzettiAPIData('{"SUCCESS": true, "DATA": {"DOOR": 2}}')
     )
     assert client.door_status == 2
@@ -499,28 +499,110 @@ async def test_light_status_parsing():
     client = PalazzettiClient("127.0.0.1")
 
     # With LGHT key
-    client._state.merge_state(
+    client._state.merge_telemetry(
         _PalazzettiAPIData('{"SUCCESS": true, "DATA": {"LGHT": 1}}')
     )
     assert client.light_status == 1
     assert client.is_light_on is True
 
     # With LIGHT fallback key (normalized to LGHT)
-    client._state._attributes.clear()
-    client._state.merge_state(
+    client._state._telemetry.clear()
+    client._state.merge_telemetry(
         _PalazzettiAPIData('{"SUCCESS": true, "DATA": {"LIGHT": 1}}')
     )
     assert client.light_status == 1
     assert client.is_light_on is True
 
     # Updating LIGHT to 0 properly reflects in light_status without stale shadowing
-    client._state.merge_state(
+    client._state.merge_telemetry(
         _PalazzettiAPIData('{"SUCCESS": true, "DATA": {"LIGHT": 0}}')
     )
     assert client.light_status == 0
     assert client.is_light_on is False
 
     # With neither
-    client._state._attributes.clear()
+    client._state._telemetry.clear()
     assert client.light_status == 0
     assert client.is_light_on is False
+
+
+async def test_to_dict_and_to_json_formats():
+    """Test to_dict and to_json with legacy and modern formats."""
+    client = await mock_ready_client()
+
+    # Legacy format (default)
+    data_legacy = client.to_dict()
+    assert "properties" in data_legacy["state"]
+    assert "attributes" in data_legacy["state"]
+    assert "device_info" not in data_legacy["state"]
+    assert "telemetry" not in data_legacy["state"]
+
+    json_legacy = client.to_json()
+    assert '"properties":' in json_legacy
+    assert '"attributes":' in json_legacy
+
+    # Modern format
+    data_modern = client.to_dict(legacy_format=False)
+    assert "device_info" in data_modern["state"]
+    assert "telemetry" in data_modern["state"]
+    assert "properties" not in data_modern["state"]
+    assert "attributes" not in data_modern["state"]
+
+    json_modern = client.to_json(legacy_format=False)
+    assert '"device_info":' in json_modern
+    assert '"telemetry":' in json_modern
+
+    # Redaction with both formats
+    redacted_legacy = client.to_dict(redact=True, legacy_format=True)
+    assert redacted_legacy["state"]["properties"]["MAC"] == "XXXXXXXX"
+
+    redacted_modern = client.to_dict(redact=True, legacy_format=False)
+    assert redacted_modern["state"]["device_info"]["MAC"] == "XXXXXXXX"
+
+
+async def test_backward_compatibility_deprecated_api():
+    """Test deprecated methods, properties, and constants."""
+    from pypalazzetti.const import (
+        COMMAND_GET_DEVICE_INFO,
+        COMMAND_GET_TELEMETRY,
+        COMMAND_UPDATE_PROPERTIES,
+        COMMAND_UPDATE_STATE,
+    )
+
+    client = PalazzettiClient("127.0.0.1")
+
+    # Test _has_properties getter and setter
+    assert client._has_properties is False
+    client._has_properties = True
+    assert client._has_device_info is True
+    assert client._has_properties is True
+
+    # Test merge_properties deprecation warning
+    with pytest.deprecated_call():
+        client._state.merge_properties(
+            _PalazzettiAPIData('{"SUCCESS": true, "DATA": {"TEST_PROP": 1}}')
+        )
+    assert client._state._device_info.get("TEST_PROP") == 1
+    assert client._state._properties.get("TEST_PROP") == 1
+
+    # Test merge_state deprecation warning
+    with pytest.deprecated_call():
+        client._state.merge_state(
+            _PalazzettiAPIData('{"SUCCESS": true, "DATA": {"TEST_ATTR": 2}}')
+        )
+    assert client._state._telemetry.get("TEST_ATTR") == 2
+    assert client._state._attributes.get("TEST_ATTR") == 2
+
+    # Test constants aliases
+    assert COMMAND_UPDATE_PROPERTIES == COMMAND_GET_DEVICE_INFO
+    assert COMMAND_UPDATE_STATE == COMMAND_GET_TELEMETRY
+
+
+async def test_update_telemetry(mock_stdt_response_ok, mock_alls_response_ok):
+    """Test update_telemetry alias."""
+    client = PalazzettiClient("127.0.0.1")
+    with patch("aiohttp.ClientSession.get", return_value=mock_stdt_response_ok):
+        assert await client.connect()
+    with patch("aiohttp.ClientSession.get", return_value=mock_alls_response_ok):
+        assert await client.update_telemetry()
+    assert client.connected
