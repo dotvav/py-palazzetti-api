@@ -40,6 +40,8 @@ class _PalazzettiState:
     ) -> bool:
         """Updates the attributes."""
         if state_data.success:
+            if "LIGHT" in state_data["DATA"] and "LGHT" not in state_data["DATA"]:
+                state_data["DATA"]["LGHT"] = state_data["DATA"]["LIGHT"]
             if (
                 "PQT" in state_data["DATA"]
                 and self._config.pellet_quantity_sanitize
@@ -300,7 +302,7 @@ class _PalazzettiState:
 
     @property
     def light_status(self) -> int:
-        return int(self._attributes.get("LIGHT", 0))
+        return int(self._attributes.get("LGHT", self._attributes.get("LIGHT", 0)))
 
     @property
     def status(self) -> int:

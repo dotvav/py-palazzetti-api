@@ -8,7 +8,7 @@ import pytest
 
 from pypalazzetti.client import PalazzettiClient
 from pypalazzetti.config import PalazzettiClientConfig
-from pypalazzetti.exceptions import CommunicationError
+from pypalazzetti.exceptions import CommunicationError, ValidationError
 from pypalazzetti.state import _PalazzettiAPIData
 from pypalazzetti.temperature import TemperatureDescriptionKey
 
@@ -365,3 +365,162 @@ async def test_custom_request_timeout(mock_stdt_response_ok):
         timeout_arg = mock_get.mock_calls[0].kwargs.get("timeout")
         assert timeout_arg is not None
         assert timeout_arg.total == 4.5
+
+
+async def test_light_control():
+    """Test light control commands and state properties."""
+    client = PalazzettiClient("127.0.0.1")
+    stdt_with_light = stdt_response().replace(
+        '"HWTYPE": 6,', '"HWTYPE": 6,\n    "LIGHTCONT": 1,'
+    )
+    alls_with_light = alls_response().replace(
+        '"LSTATUS": 51,', '"LSTATUS": 51,\n    "LGHT": 1,'
+    )
+
+    with patch(
+        "aiohttp.ClientSession.get",
+        return_value=MockResponse(status=200, text=stdt_with_light),
+    ):
+        assert await client.connect()
+
+    with patch(
+        "aiohttp.ClientSession.get",
+        return_value=MockResponse(status=200, text=alls_with_light),
+    ):
+        assert await client.update_state()
+
+    assert client.has_light_control is True
+    assert client.light_status == 1
+    assert client.is_light_on is True
+
+    # Turn light off
+    with patch(
+        "aiohttp.ClientSession.get",
+        return_value=MockResponse(
+            status=200, text='{"SUCCESS": true, "DATA": {"LGHT": 0}}'
+        ),
+    ) as get:
+        assert await client.set_light(False)
+        assert get.mock_calls[-1].args[0].split("=")[-1] == "SET LGHT 0"
+        assert client.is_light_on is False
+        assert client.light_status == 0
+
+    # Turn light on
+    with patch(
+        "aiohttp.ClientSession.get",
+        return_value=MockResponse(
+            status=200, text='{"SUCCESS": true, "DATA": {"LGHT": 1}}'
+        ),
+    ) as get:
+        assert await client.set_light(True)
+        assert get.mock_calls[-1].args[0].split("=")[-1] == "SET LGHT 1"
+        assert client.is_light_on is True
+        assert client.light_status == 1
+
+
+async def test_light_control_not_available():
+    """Test that set_light raises ValidationError when not supported."""
+    client = await mock_ready_client()
+    assert client.has_light_control is False
+
+    with pytest.raises(ValidationError, match="Light control not available."):
+        await client.set_light(True)
+
+
+async def test_door_control():
+    """Test motorized door control commands and state properties."""
+    client = PalazzettiClient("127.0.0.1")
+    stdt_with_door = stdt_response().replace(
+        '"HWTYPE": 6,', '"HWTYPE": 6,\n    "DOORMOTOR": 1,'
+    )
+    alls_with_door = alls_response().replace(
+        '"LSTATUS": 51,', '"LSTATUS": 51,\n    "DOOR": 0,'
+    )
+
+    with patch(
+        "aiohttp.ClientSession.get",
+        return_value=MockResponse(status=200, text=stdt_with_door),
+    ):
+        assert await client.connect()
+
+    with patch(
+        "aiohttp.ClientSession.get",
+        return_value=MockResponse(status=200, text=alls_with_door),
+    ):
+        assert await client.update_state()
+
+    assert client.has_door_control is True
+    assert client.door_status == 0
+    assert client.is_door_open is False
+
+    # Open door -> SET DOOR 1
+    with patch(
+        "aiohttp.ClientSession.get",
+        return_value=MockResponse(
+            status=200, text='{"SUCCESS": true, "DATA": {"DOOR": 1}}'
+        ),
+    ) as get:
+        assert await client.set_door(True)
+        assert get.mock_calls[-1].args[0].split("=")[-1] == "SET DOOR 1"
+        assert client.is_door_open is True
+        assert client.door_status == 1
+
+    # Close door -> SET DOOR 2
+    with patch(
+        "aiohttp.ClientSession.get",
+        return_value=MockResponse(
+            status=200, text='{"SUCCESS": true, "DATA": {"DOOR": 0}}'
+        ),
+    ) as get:
+        assert await client.set_door(False)
+        assert get.mock_calls[-1].args[0].split("=")[-1] == "SET DOOR 2"
+        assert client.is_door_open is False
+        assert client.door_status == 0
+
+    # Non-zero door status (e.g. moving/open code 2) indicates open
+    client._state.merge_state(
+        _PalazzettiAPIData('{"SUCCESS": true, "DATA": {"DOOR": 2}}')
+    )
+    assert client.door_status == 2
+    assert client.is_door_open is True
+
+
+async def test_door_control_not_available():
+    """Test that set_door raises ValidationError when not supported."""
+    client = await mock_ready_client()
+    assert client.has_door_control is False
+
+    with pytest.raises(ValidationError, match="Door control not available."):
+        await client.set_door(True)
+
+
+async def test_light_status_parsing():
+    """Test parsing light status with both LGHT and LIGHT keys."""
+    client = PalazzettiClient("127.0.0.1")
+
+    # With LGHT key
+    client._state.merge_state(
+        _PalazzettiAPIData('{"SUCCESS": true, "DATA": {"LGHT": 1}}')
+    )
+    assert client.light_status == 1
+    assert client.is_light_on is True
+
+    # With LIGHT fallback key (normalized to LGHT)
+    client._state._attributes.clear()
+    client._state.merge_state(
+        _PalazzettiAPIData('{"SUCCESS": true, "DATA": {"LIGHT": 1}}')
+    )
+    assert client.light_status == 1
+    assert client.is_light_on is True
+
+    # Updating LIGHT to 0 properly reflects in light_status without stale shadowing
+    client._state.merge_state(
+        _PalazzettiAPIData('{"SUCCESS": true, "DATA": {"LIGHT": 0}}')
+    )
+    assert client.light_status == 0
+    assert client.is_light_on is False
+
+    # With neither
+    client._state._attributes.clear()
+    assert client.light_status == 0
+    assert client.is_light_on is False
