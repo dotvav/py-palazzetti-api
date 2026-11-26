@@ -477,6 +477,13 @@ async def test_door_control():
         assert client.is_door_open is False
         assert client.door_status == 0
 
+    # Non-zero door status (e.g. moving/open code 2) indicates open
+    client._state.merge_state(
+        _PalazzettiAPIData('{"SUCCESS": true, "DATA": {"DOOR": 2}}')
+    )
+    assert client.door_status == 2
+    assert client.is_door_open is True
+
 
 async def test_door_control_not_available():
     """Test that set_door raises ValidationError when not supported."""
@@ -498,13 +505,20 @@ async def test_light_status_parsing():
     assert client.light_status == 1
     assert client.is_light_on is True
 
-    # With LIGHT fallback key
+    # With LIGHT fallback key (normalized to LGHT)
     client._state._attributes.clear()
     client._state.merge_state(
         _PalazzettiAPIData('{"SUCCESS": true, "DATA": {"LIGHT": 1}}')
     )
     assert client.light_status == 1
     assert client.is_light_on is True
+
+    # Updating LIGHT to 0 properly reflects in light_status without stale shadowing
+    client._state.merge_state(
+        _PalazzettiAPIData('{"SUCCESS": true, "DATA": {"LIGHT": 0}}')
+    )
+    assert client.light_status == 0
+    assert client.is_light_on is False
 
     # With neither
     client._state._attributes.clear()

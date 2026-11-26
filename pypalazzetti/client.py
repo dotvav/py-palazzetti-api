@@ -434,13 +434,13 @@ class PalazzettiClient:
             ).success
         raise ValidationError("Light control not available.")
 
-    async def set_door(self, open: bool) -> bool:
+    async def set_door(self, open_door: bool) -> bool:
         """Set the door open or closed."""
         if self._state.has_door_control:
             return (
                 await self._execute_command(
                     command=COMMAND_SET_DOOR,
-                    parameter=1 if open else 2,
+                    parameter=1 if open_door else 2,
                     merge_state=True,
                 )
             ).success
