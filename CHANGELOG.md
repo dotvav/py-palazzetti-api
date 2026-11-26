@@ -1,8 +1,8 @@
 # Changelog
 
 ## 0.2.0
-* BREAKING CHANGE: Change `to_dict()` and `to_json()` default output format from legacy keys (`properties`, `attributes`) to semantic keys (`device_info`, `telemetry`)
-* Add backward compatibility: passing `legacy=True` or `legacy_format=True` continues to return the legacy format (`properties`, `attributes`) with a `DeprecationWarning`
+* BREAKING CHANGE: Remove legacy output format (`properties`, `attributes`) from `to_dict()` and `to_json()`. Output now strictly uses semantic keys (`device_info`, `telemetry`).
+* Clean up `to_dict(redact: bool = False)` and `to_json(redact: bool = False)` signatures by removing legacy compatibility arguments.
 
 ## 0.1.24
 * Refactor internal state storage: rename `_properties` to `_device_info` and `_attributes` to `_telemetry`

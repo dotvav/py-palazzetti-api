@@ -44,28 +44,14 @@ async def update_state(self) -> bool:
   2. Provide `@property` aliases for private attributes and method aliases emitting `DeprecationWarning` with `stacklevel=2`.
 
 
-## Two-Stage SemVer Migration: Inverting Defaults while Preserving Dual-Keyword Deprecation Flags
-- **Last Updated**: `2026-11-26T15:42:00Z`
-- **The Issue**: Transitioning API serialization outputs from deprecated legacy keys (`properties`/`attributes`) to modern semantic keys (`device_info`/`telemetry`) in a minor version bump (v0.2.0) without breaking downstream consumers (like Home Assistant Core diagnostics snapshots) during multi-repository staged rollouts.
+## Clean SemVer Breaking Transition: Removing Legacy Serialization Flags (YAGNI)
+- **Last Updated**: `2026-11-26T15:50:00Z`
+- **The Issue**: Maintaining speculative backward-compatibility keyword arguments (`legacy_format`, `legacy`) in serialization helpers (`to_dict()`, `to_json()`) across SemVer bumps introduces significant maintenance overhead, warning stacklevel complexities, and dead argument resolution paths.
 - **The Gotcha**:
-  1. Downstream consumers bumping dependencies in initial PRs cannot immediately refactor all their internal diagnostic tests and snapshots in the same commit.
-  2. Callers frequently confuse or shorten migration argument names (e.g., calling `legacy=True` instead of `legacy_format=True`). If only one keyword name is supported, downstream code breaks with `TypeError: unexpected keyword argument`.
-  3. Propagating `is_legacy` through nested helper calls (`client.to_dict` calling `state.to_dict` or `to_json` calling `to_dict`) causes duplicate `DeprecationWarning` emissions and corrupts `stacklevel=2`, making warnings point to internal library frames rather than downstream user code.
-  4. Silent precedence (e.g. `legacy=False, legacy_format=True`) can cause subtle bugs unless contradictory combinations are explicitly rejected.
+  1. Downstream consumers (such as Home Assistant Core `diagnostics.py`) often already invoke parameterless serialization calls like `client.to_dict(redact=True)`.
+  2. Trying to bridge serialization schemas through transitional flags in minor/major bumps (v0.2.0) creates unneeded abstraction layers (`_resolve_legacy_format`, `_to_dict_data`) when downstream consumers can simply update their test snapshots in the bump PR.
 - **The Solution**:
-  1. Default both migration keyword arguments to `None` (`legacy_format: bool | None = None, legacy: bool | None = None`) so modern semantic keys are returned by default while distinguishing omitted arguments from explicit `False`.
-  2. Implement a single shared resolver (`_resolve_legacy_format`) with contradiction validation:
-     ```python
-     if legacy is not None and legacy_format is not None and legacy != legacy_format:
-         raise ValueError(
-             "Conflicting arguments: 'legacy' and 'legacy_format' cannot have different values."
-         )
-     is_legacy = bool(
-         legacy
-         if legacy is not None
-         else (legacy_format if legacy_format is not None else False)
-     )
-     ```
-  3. Separate public entry points (`to_dict`, `to_json`) that delegate to `_resolve_legacy_format(..., stacklevel=3)` from private data extraction helpers (`_to_dict_data`) that never emit warnings.
-  4. Verify with `warnings.catch_warnings(record=True)` asserting `len(recorded) == 1`, `recorded[0].filename == __file__`, and 0 warnings on modern calls.
+  1. Apply YAGNI: completely delete transitional compatibility flags (`legacy`, `legacy_format`) and intermediate helpers in the breaking release (v0.2.0).
+  2. Keep public signatures minimal: `def to_dict(self, redact: bool = False) -> dict[str, Any]:` and `def to_json(self, redact: bool = False) -> str:`.
+  3. Ensure downstream test suites update their mocks and snapshots directly during the dependency bump.
 

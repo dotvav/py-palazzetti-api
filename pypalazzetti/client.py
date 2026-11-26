@@ -27,7 +27,7 @@ from .const import (
 )
 from .exceptions import CommunicationError, ValidationError
 from .fan import FanType
-from .state import _PalazzettiAPIData, _PalazzettiState, _resolve_legacy_format
+from .state import _PalazzettiAPIData, _PalazzettiState
 from .temperature import TemperatureDefinition
 
 
@@ -495,15 +495,16 @@ class PalazzettiClient:
                 self._state.merge_telemetry(payload)
             return payload
 
-    def _to_dict_data(self, redact: bool, is_legacy: bool) -> dict[str, Any]:
-        """Return raw client snapshot dictionary without emitting deprecation warnings."""
-        info_key = "properties" if is_legacy else "device_info"
-        telemetry_key = "attributes" if is_legacy else "telemetry"
+    def to_json(self, redact: bool = False) -> str:
+        """Return a snapshot of the client as a json string."""
+        return json.dumps(self.to_dict(redact=redact))
 
+    def to_dict(self, redact: bool = False) -> dict[str, Any]:
+        """Return a snapshot of the client as a dict."""
         data: dict[str, Any] = {
             "host": self._hostname,
             "connected": self.connected,
-            "state": self._state._to_dict_data(is_legacy=is_legacy),
+            "state": self._state.to_dict(),
         }
 
         if redact:
@@ -522,43 +523,7 @@ class PalazzettiClient:
                 "WSSID": REDACTED_DATA,
             }
             data["host"] = REDACTED_DATA
-            data["state"][info_key] = data["state"][info_key] | redacted
-            data["state"][telemetry_key] = data["state"][telemetry_key] | redacted
+            data["state"]["device_info"] = data["state"]["device_info"] | redacted
+            data["state"]["telemetry"] = data["state"]["telemetry"] | redacted
 
         return data
-
-    def to_json(
-        self,
-        redact: bool = False,
-        *,
-        legacy_format: bool | None = None,
-        legacy: bool | None = None,
-    ) -> str:
-        """Return a snapshot of the client as a json string.
-
-        Default format is modern ('device_info' and 'telemetry').
-        Passing legacy=True or legacy_format=True returns the legacy format
-        ('properties' and 'attributes') for backward compatibility.
-        """
-        is_legacy = _resolve_legacy_format(
-            legacy_format=legacy_format, legacy=legacy, stacklevel=3
-        )
-        return json.dumps(self._to_dict_data(redact=redact, is_legacy=is_legacy))
-
-    def to_dict(
-        self,
-        redact: bool = False,
-        *,
-        legacy_format: bool | None = None,
-        legacy: bool | None = None,
-    ) -> dict[str, Any]:
-        """Return a snapshot of the client as a dict.
-
-        Default format is modern ('device_info' and 'telemetry').
-        Passing legacy=True or legacy_format=True returns the legacy format
-        ('properties' and 'attributes') for backward compatibility.
-        """
-        is_legacy = _resolve_legacy_format(
-            legacy_format=legacy_format, legacy=legacy, stacklevel=3
-        )
-        return self._to_dict_data(redact=redact, is_legacy=is_legacy)
