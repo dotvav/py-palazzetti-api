@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.23
+* Add support for light control (`has_light_control`, `light_status`, `is_light_on`, `set_light`) with `SET LGHT`
+* Support both `LGHT` and `LIGHT` attribute keys when parsing CBox status
+* Add support for motorized door control (`has_door_control`, `door_status`, `is_door_open`, `set_door`) with `SET DOOR`
+
 ## 0.1.22
 * Increase default HTTP `request_timeout` from 10.0s to 25.0s to accommodate slow CBOX serial responses
 * Improve timeout error message to include the configured timeout duration

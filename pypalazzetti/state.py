@@ -300,7 +300,7 @@ class _PalazzettiState:
 
     @property
     def light_status(self) -> int:
-        return int(self._attributes.get("LIGHT", 0))
+        return int(self._attributes.get("LGHT", self._attributes.get("LIGHT", 0)))
 
     @property
     def status(self) -> int:

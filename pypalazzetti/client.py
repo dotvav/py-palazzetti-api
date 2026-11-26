@@ -10,8 +10,10 @@ from .config import PalazzettiClientConfig
 from .const import (
     API_COMMAND_URL_TEMPLATE,
     COMMAND_CHECK_ONLINE,
+    COMMAND_SET_DOOR,
     COMMAND_SET_FAN_SILENT,
     COMMAND_SET_LEFT_FAN_SPEED,
+    COMMAND_SET_LIGHT,
     COMMAND_SET_MAIN_FAN_SPEED,
     COMMAND_SET_OFF,
     COMMAND_SET_ON,
@@ -246,6 +248,36 @@ class PalazzettiClient:
         return self._state.is_heating
 
     @property
+    def has_light_control(self) -> bool:
+        """Check if light control is available."""
+        return self._state.has_light_control
+
+    @property
+    def light_status(self) -> int:
+        """Return the light status."""
+        return self._state.light_status
+
+    @property
+    def is_light_on(self) -> bool:
+        """Check if the light is on."""
+        return self._state.light_status == 1
+
+    @property
+    def has_door_control(self) -> bool:
+        """Check if motorized door control is available."""
+        return self._state.has_door_control
+
+    @property
+    def door_status(self) -> int:
+        """Return the door status."""
+        return self._state.door_status
+
+    @property
+    def is_door_open(self) -> bool:
+        """Check if the door is open."""
+        return self._state.door_status != 0
+
+    @property
     def has_fan_silent(self) -> bool:
         """Check if the fan has the silent mode available."""
         return self._state.has_fan_mode_silent
@@ -389,6 +421,30 @@ class PalazzettiClient:
                 )
             ).success
         raise ValidationError("Main operation switch not available.")
+
+    async def set_light(self, on: bool) -> bool:
+        """Set the light on or off."""
+        if self._state.has_light_control:
+            return (
+                await self._execute_command(
+                    command=COMMAND_SET_LIGHT,
+                    parameter=1 if on else 0,
+                    merge_state=True,
+                )
+            ).success
+        raise ValidationError("Light control not available.")
+
+    async def set_door(self, open: bool) -> bool:
+        """Set the door open or closed."""
+        if self._state.has_door_control:
+            return (
+                await self._execute_command(
+                    command=COMMAND_SET_DOOR,
+                    parameter=1 if open else 2,
+                    merge_state=True,
+                )
+            ).success
+        raise ValidationError("Door control not available.")
 
     async def _execute_command(
         self,
