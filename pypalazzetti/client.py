@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import warnings
 from json.decoder import JSONDecodeError
 from typing import Any
 
@@ -28,7 +27,7 @@ from .const import (
 )
 from .exceptions import CommunicationError, ValidationError
 from .fan import FanType
-from .state import _PalazzettiAPIData, _PalazzettiState
+from .state import _PalazzettiAPIData, _PalazzettiState, _resolve_legacy_format
 from .temperature import TemperatureDefinition
 
 
@@ -541,21 +540,9 @@ class PalazzettiClient:
         Passing legacy=True or legacy_format=True returns the legacy format
         ('properties' and 'attributes') for backward compatibility.
         """
-        if legacy is not None and legacy_format is not None and legacy != legacy_format:
-            raise ValueError(
-                "Conflicting arguments: 'legacy' and 'legacy_format' cannot have different values."
-            )
-        is_legacy = bool(
-            legacy
-            if legacy is not None
-            else (legacy_format if legacy_format is not None else False)
+        is_legacy = _resolve_legacy_format(
+            legacy_format=legacy_format, legacy=legacy, stacklevel=3
         )
-        if is_legacy:
-            warnings.warn(
-                "legacy / legacy_format is deprecated and will be removed in a future release.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         return json.dumps(self._to_dict_data(redact=redact, is_legacy=is_legacy))
 
     def to_dict(
@@ -571,19 +558,7 @@ class PalazzettiClient:
         Passing legacy=True or legacy_format=True returns the legacy format
         ('properties' and 'attributes') for backward compatibility.
         """
-        if legacy is not None and legacy_format is not None and legacy != legacy_format:
-            raise ValueError(
-                "Conflicting arguments: 'legacy' and 'legacy_format' cannot have different values."
-            )
-        is_legacy = bool(
-            legacy
-            if legacy is not None
-            else (legacy_format if legacy_format is not None else False)
+        is_legacy = _resolve_legacy_format(
+            legacy_format=legacy_format, legacy=legacy, stacklevel=3
         )
-        if is_legacy:
-            warnings.warn(
-                "legacy / legacy_format is deprecated and will be removed in a future release.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         return self._to_dict_data(redact=redact, is_legacy=is_legacy)

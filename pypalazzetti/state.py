@@ -20,6 +20,30 @@ class _PalazzettiAPIData(dict[str, Any]):
         return bool(self.get("SUCCESS", False))
 
 
+def _resolve_legacy_format(
+    legacy_format: bool | None,
+    legacy: bool | None,
+    stacklevel: int = 3,
+) -> bool:
+    """Validate and resolve legacy format arguments, emitting a DeprecationWarning if truthy."""
+    if legacy is not None and legacy_format is not None and legacy != legacy_format:
+        raise ValueError(
+            "Conflicting arguments: 'legacy' and 'legacy_format' cannot have different values."
+        )
+    is_legacy = bool(
+        legacy
+        if legacy is not None
+        else (legacy_format if legacy_format is not None else False)
+    )
+    if is_legacy:
+        warnings.warn(
+            "legacy / legacy_format is deprecated and will be removed in a future release.",
+            DeprecationWarning,
+            stacklevel=stacklevel,
+        )
+    return is_legacy
+
+
 class _PalazzettiState:
     _device_info: dict[str, Any]  # Static data
     _telemetry: dict[str, Any]  # Mostly sensors data
@@ -442,19 +466,7 @@ class _PalazzettiState:
         Passing legacy=True or legacy_format=True returns the legacy format
         ('properties' and 'attributes') for backward compatibility.
         """
-        if legacy is not None and legacy_format is not None and legacy != legacy_format:
-            raise ValueError(
-                "Conflicting arguments: 'legacy' and 'legacy_format' cannot have different values."
-            )
-        is_legacy = bool(
-            legacy
-            if legacy is not None
-            else (legacy_format if legacy_format is not None else False)
+        is_legacy = _resolve_legacy_format(
+            legacy_format=legacy_format, legacy=legacy, stacklevel=3
         )
-        if is_legacy:
-            warnings.warn(
-                "legacy / legacy_format is deprecated and will be removed in a future release.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         return self._to_dict_data(is_legacy)

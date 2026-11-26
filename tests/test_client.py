@@ -621,6 +621,23 @@ async def test_to_dict_and_to_json_formats():
     with pytest.raises(ValueError, match="Conflicting arguments"):
         client._state.to_dict(legacy=True, legacy_format=False)
 
+    # Direct _PalazzettiState.to_dict calls
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
+        state_default = client._state.to_dict()
+    assert len(recorded) == 0
+    assert "device_info" in state_default
+    assert "telemetry" in state_default
+
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
+        state_legacy = client._state.to_dict(legacy=True)
+    assert len(recorded) == 1
+    assert issubclass(recorded[0].category, DeprecationWarning)
+    assert recorded[0].filename == __file__
+    assert "properties" in state_legacy
+    assert "attributes" in state_legacy
+
     # Redaction with modern and legacy formats
     with warnings.catch_warnings(record=True):
         warnings.simplefilter("always")

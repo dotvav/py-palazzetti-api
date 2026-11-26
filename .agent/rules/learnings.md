@@ -53,15 +53,19 @@ async def update_state(self) -> bool:
   3. Propagating `is_legacy` through nested helper calls (`client.to_dict` calling `state.to_dict` or `to_json` calling `to_dict`) causes duplicate `DeprecationWarning` emissions and corrupts `stacklevel=2`, making warnings point to internal library frames rather than downstream user code.
   4. Silent precedence (e.g. `legacy=False, legacy_format=True`) can cause subtle bugs unless contradictory combinations are explicitly rejected.
 - **The Solution**:
-  1. Invert the default: default `legacy_format=False` and `legacy=None` so new callers get semantic keys automatically.
-  2. Implement dual-keyword resolution with contradiction check:
+  1. Default both migration keyword arguments to `None` (`legacy_format: bool | None = None, legacy: bool | None = None`) so modern semantic keys are returned by default while distinguishing omitted arguments from explicit `False`.
+  2. Implement a single shared resolver (`_resolve_legacy_format`) with contradiction validation:
      ```python
-     if legacy is not None and legacy != legacy_format:
+     if legacy is not None and legacy_format is not None and legacy != legacy_format:
          raise ValueError(
              "Conflicting arguments: 'legacy' and 'legacy_format' cannot have different values."
          )
-     is_legacy = bool(legacy if legacy is not None else legacy_format)
+     is_legacy = bool(
+         legacy
+         if legacy is not None
+         else (legacy_format if legacy_format is not None else False)
+     )
      ```
-  3. Separate public entry points (`to_dict`, `to_json`) that emit a single `DeprecationWarning` at `stacklevel=2` from private data extraction helpers (`_to_dict_data`) that never emit warnings.
+  3. Separate public entry points (`to_dict`, `to_json`) that delegate to `_resolve_legacy_format(..., stacklevel=3)` from private data extraction helpers (`_to_dict_data`) that never emit warnings.
   4. Verify with `warnings.catch_warnings(record=True)` asserting `len(recorded) == 1`, `recorded[0].filename == __file__`, and 0 warnings on modern calls.
 
