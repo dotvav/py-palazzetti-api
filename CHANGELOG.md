@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.24
+* Refactor internal state storage: rename `_properties` to `_device_info` and `_attributes` to `_telemetry`
+* Introduce `COMMAND_GET_DEVICE_INFO` and `COMMAND_GET_TELEMETRY` constants with backward-compatible aliases
+* Add `merge_device_info()` and `merge_telemetry()` methods with deprecated `merge_properties()` and `merge_state()` aliases
+* Add `update_telemetry()` client method alias
+* Add `legacy_format` keyword-only parameter to `to_dict()` and `to_json()` to support modern `device_info`/`telemetry` keys while preserving legacy `properties`/`attributes` by default
+* Fix static typing annotations and mypy issues
+
 ## 0.1.23
 * Add support for light control (`has_light_control`, `light_status`, `is_light_on`, `set_light`) with `SET LGHT`
 * Support both `LGHT` and `LIGHT` attribute keys when parsing CBox status
